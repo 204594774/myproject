@@ -1,0 +1,859 @@
+Starting Flask App Unbuffered... 
+ * Serving Flask app 'app'
+ * Debug mode: on
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5000
+Press CTRL+C to quit
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\check_db_refs.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\__init__.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_db_with_app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\security.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_seq.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\utils.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_ghost_project.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\json\\__init__.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reproduce_failure.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\app.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_put_6.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\config.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_user_mgmt.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\ctx.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\globals.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\helpers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\templating.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\wrappers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\datastructures\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\typing.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\scaffold.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sessions.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\environment.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\request.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\_internal.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\request.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\app.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\database.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\verify_student_submission.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\verify_student_comp_view.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\verify_project_detail.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\verify_notifications.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\verify_id17.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\verify_get_projects.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\verify_form_config_test.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\verify_flow.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\verify_config_field.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\verify_backend_behavior.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\verify_api_json.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\verify_admin_actions.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\update_users.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_student_edit.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_legacy_school_reject.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_edit_permissions.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_college_audit.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_audit.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_approver_edit.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_advisor_edit.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reset_pwds.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reproduce_issue.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reproduce_id14_issue.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reproduce_complex_failure.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\migrate_users_columns.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\migrate_projects_more_columns.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\migrate_projects_columns.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\migrate_notifications.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\migrate_members.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\migrate_innovation_columns.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\migrate_db_v2.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\migrate_db.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\fix_visibility_data.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\fix_student_id.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\fix_missing_tables.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\fix_members_data.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\fix_data.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\dump_ids.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\dump_all_projects.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_users.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_teacher_v2.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_teacher.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_student_view.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_school_flow_full.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_school_flow.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_projects.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_notifications.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_db.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_data.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_audit.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_user.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_specific_ids.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_school_users_v2.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_school_users.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_school_projects_api_v2.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_school_projects_api.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_school_notifications_v2.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_school_notifications.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_pm_db.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_notifications.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_missing_ids.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_ids_py.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_ghost_9.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_db_direct.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_api_response.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\app_404_handler.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\verify_fix_full.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\check_syntax.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_syntax.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_syntax.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\check_dupes.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_dupes.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_dupes.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_dupes.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\check_server_status.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_server_status.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_server_status.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_server_status.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\check_db_refs.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_db_with_app.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_seq.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_ghost_project.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reproduce_failure.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_put_6.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_user_mgmt.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\security.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\utils.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\json\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\config.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\ctx.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\globals.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\helpers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\templating.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\wrappers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\datastructures\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\typing.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\scaffold.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sessions.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\environment.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\request.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\_internal.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\request.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\check_dupes.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_server_status.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_syntax.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\app.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\database.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\verify_student_submission.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\verify_student_comp_view.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\verify_project_detail.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\verify_notifications.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\verify_id17.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\verify_get_projects.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\verify_form_config_test.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\verify_flow.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\verify_config_field.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\verify_backend_behavior.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\verify_api_json.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\verify_admin_actions.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\update_users.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_student_edit.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_legacy_school_reject.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_edit_permissions.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_college_audit.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_audit.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_approver_edit.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_advisor_edit.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reset_pwds.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reproduce_issue.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reproduce_id14_issue.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reproduce_complex_failure.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\migrate_users_columns.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\migrate_projects_more_columns.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\migrate_projects_columns.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\migrate_notifications.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\migrate_members.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\migrate_innovation_columns.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\migrate_db_v2.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\migrate_db.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\fix_visibility_data.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\fix_student_id.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\fix_missing_tables.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\fix_members_data.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\fix_data.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\dump_ids.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\dump_all_projects.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_users.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_teacher_v2.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_teacher.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_student_view.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_school_flow_full.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_school_flow.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_projects.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_notifications.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_db.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_data.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_audit.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_user.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_specific_ids.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_school_users_v2.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_school_users.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_school_projects_api_v2.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_school_projects_api.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_school_notifications_v2.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_school_notifications.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_pm_db.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_notifications.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_missing_ids.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_ids_py.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_ghost_9.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_db_direct.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_api_response.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\app_404_handler.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\verify_fix_full.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\app.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\app.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\app.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\check_db_with_app.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_put_6.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_db_refs.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reproduce_failure.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_user_mgmt.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_seq.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\debug_ghost_project.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\security.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\utils.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\json\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\config.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\ctx.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\globals.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\helpers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\templating.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\wrappers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\datastructures\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\typing.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\scaffold.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sessions.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\environment.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\request.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\_internal.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\request.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\check_db_refs.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_db_with_app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\__init__.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_seq.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\security.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_ghost_project.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\utils.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reproduce_failure.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_put_6.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_user_mgmt.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\json\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\config.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\ctx.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\globals.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\helpers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\templating.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\wrappers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\datastructures\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\typing.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\scaffold.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sessions.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\environment.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\request.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\_internal.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\request.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\check_db_refs.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_db_with_app.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_seq.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_ghost_project.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reproduce_failure.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_put_6.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_user_mgmt.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\security.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\utils.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\json\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\config.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\ctx.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\globals.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\helpers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\templating.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\wrappers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\datastructures\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\typing.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\scaffold.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sessions.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\environment.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\request.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\_internal.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\request.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\check_dupes.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_server_status.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_syntax.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\check_db_refs.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_db_with_app.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_seq.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_ghost_project.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reproduce_failure.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_put_6.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_user_mgmt.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\security.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\utils.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\json\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\config.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\ctx.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\globals.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\helpers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\templating.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\wrappers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\datastructures\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\typing.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\scaffold.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sessions.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\environment.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\request.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\_internal.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\request.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\check_db_refs.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_db_with_app.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_seq.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_ghost_project.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reproduce_failure.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_put_6.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_user_mgmt.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\security.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\utils.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\json\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\config.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\ctx.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\globals.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\helpers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\templating.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\wrappers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\datastructures\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\typing.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\scaffold.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sessions.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\environment.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\request.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\_internal.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\request.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\check_db_refs.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\__init__.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_db_with_app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\security.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_seq.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\utils.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_ghost_project.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reproduce_failure.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_put_6.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_user_mgmt.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\json\\__init__.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\check_db_refs.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_db_with_app.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_seq.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_ghost_project.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reproduce_failure.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_put_6.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_user_mgmt.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\security.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\utils.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\json\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\config.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\ctx.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\globals.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\helpers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\templating.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\wrappers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\datastructures\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\typing.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\scaffold.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sessions.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\environment.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\request.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\_internal.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\request.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\check_db_refs.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_db_with_app.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_seq.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_ghost_project.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reproduce_failure.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_put_6.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_user_mgmt.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\security.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\utils.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\json\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\config.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\ctx.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\globals.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\helpers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\templating.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\wrappers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\datastructures\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\typing.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\scaffold.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sessions.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\environment.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\request.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\_internal.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\request.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\app.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\check_db_refs.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_db_with_app.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_seq.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_ghost_project.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reproduce_failure.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_put_6.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_user_mgmt.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\security.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\utils.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\json\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\config.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\ctx.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\globals.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\helpers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\templating.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\wrappers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\datastructures\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\typing.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\scaffold.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sessions.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\environment.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\request.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\_internal.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\request.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\check_db_refs.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_db_with_app.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_seq.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_ghost_project.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reproduce_failure.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_put_6.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_user_mgmt.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\security.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\utils.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\json\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\config.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\ctx.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\globals.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\helpers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\templating.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\wrappers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\datastructures\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\typing.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\scaffold.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sessions.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\environment.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\request.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\_internal.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\request.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\app.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\check_db_refs.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_db_with_app.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_seq.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_ghost_project.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reproduce_failure.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_put_6.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_user_mgmt.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\security.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\utils.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\json\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\config.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\ctx.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\globals.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\helpers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\templating.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\wrappers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\datastructures\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\typing.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\scaffold.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sessions.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\environment.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\request.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\_internal.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\request.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\check_db_refs.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_db_with_app.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_seq.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_ghost_project.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reproduce_failure.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_put_6.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_user_mgmt.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\security.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\utils.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\json\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\config.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\ctx.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\globals.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\helpers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\templating.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\wrappers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\datastructures\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\typing.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\scaffold.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sessions.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\environment.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\request.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\_internal.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\request.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\check_db_refs.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_db_with_app.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_seq.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_ghost_project.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reproduce_failure.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_put_6.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_user_mgmt.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\security.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\utils.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\json\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\config.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\ctx.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\globals.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\helpers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\templating.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\wrappers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\datastructures\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\typing.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\scaffold.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sessions.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\environment.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\request.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\_internal.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\request.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\check_db_refs.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_db_with_app.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_seq.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_ghost_project.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reproduce_failure.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_put_6.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_user_mgmt.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\security.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\utils.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\json\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\config.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\ctx.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\globals.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\helpers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\templating.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\wrappers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\datastructures\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\typing.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\scaffold.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sessions.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\environment.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\request.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\_internal.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\request.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\check_db_refs.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_db_with_app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\__init__.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_seq.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\security.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_ghost_project.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\utils.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reproduce_failure.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_put_6.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_user_mgmt.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\json\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\config.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\ctx.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\globals.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\helpers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\templating.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\wrappers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\datastructures\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\typing.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\scaffold.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sessions.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\environment.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\request.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\_internal.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\request.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\check_db_refs.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_db_with_app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\__init__.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_seq.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_ghost_project.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\security.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reproduce_failure.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\utils.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_put_6.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_user_mgmt.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\json\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\config.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\ctx.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\globals.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\helpers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\templating.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\wrappers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\datastructures\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\typing.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\scaffold.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sessions.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\environment.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\request.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\_internal.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\request.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\check_db_refs.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_db_with_app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\__init__.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_seq.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\security.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_ghost_project.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\utils.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reproduce_failure.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_put_6.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_user_mgmt.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\json\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\config.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\ctx.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\globals.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\helpers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\templating.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\wrappers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\datastructures\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\typing.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\scaffold.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sessions.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\environment.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\request.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\_internal.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\request.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
+ * Detected change in 'D:\\桌面\\new11\\check_db_refs.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_db_with_app.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\check_seq.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\debug_ghost_project.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\reproduce_failure.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_put_6.py', reloading
+ * Detected change in 'D:\\桌面\\new11\\test_user_mgmt.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\security.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\utils.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\json\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\config.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\ctx.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\globals.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\helpers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\templating.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\wrappers.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\datastructures\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\typing.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\app.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sansio\\scaffold.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\flask\\sessions.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\__init__.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\jinja2\\environment.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\request.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\wrappers\\response.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\_internal.py', reloading
+ * Detected change in 'E:\\anaconda\\Lib\\site-packages\\werkzeug\\sansio\\request.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 645-129-346
