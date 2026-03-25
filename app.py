@@ -2014,8 +2014,7 @@ def create_announcement():
             VALUES (?, ?, ?, ?)
         ''', (data.get('title'), data.get('content'), data.get('type', 'news'), user_id))
         
-        # Create notifications for ALL users when a new announcement is published
-        users = conn.execute('SELECT id FROM users').fetchall()
+        users = conn.execute('SELECT id FROM users WHERE id != ?', (user_id,)).fetchall()
         for u in users:
             create_notification(conn, u['id'], '新公告发布', f"系统发布了新公告：{data.get('title')}", 'info')
             

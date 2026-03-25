@@ -1,1 +1,11 @@
-Flask
+Flask==2.3.3
+Werkzeug==2.3.7
+flask-restx==1.1.0
+python-dotenv==1.0.0
+pytest==7.4.0
+requests==2.31.0
+axios==0.27.2
+echarts==5.4.3
+element-plus==2.3.9
+vue==3.3.4
+vue-router==4.2.4

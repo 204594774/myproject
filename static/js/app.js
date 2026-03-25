@@ -1,5 +1,5 @@
 const { createApp, ref, computed, onMounted } = Vue;
-console.log('%c App.js Version: v27 Loaded ', 'background: #222; color: #bada55; font-size: 16px; padding: 4px;');
+console.log('%c App.js Version: v32 Loaded ', 'background: #222; color: #bada55; font-size: 16px; padding: 4px;');
 const { createRouter, createWebHashHistory } = VueRouter;
 
 // --- GLOBAL AXIOS INTERCEPTOR ---
@@ -16,20 +16,39 @@ axios.interceptors.request.use(config => {
             return Promise.reject(new Error(msg));
         }
         
-        // Also check body for ID 9 if it's a PUT/POST
-        if (config.data && typeof config.data === 'object') {
-             if ([6, 7, 8, 9].includes(Number(config.data.id))) {
-                 const msg = `CRITICAL INTERCEPTOR: Blocked request with Ghost ID in body: ${config.data.id}`;
-                 console.error(msg);
-                 alert('系统安全拦截：检测到非法项目ID数据。请刷新页面。');
-                 return Promise.reject(new Error(msg));
-             }
+        // Also check body id ONLY for project-related requests
+        const isProjectRequest = /\/api\/projects(\/|$|\?)/.test(config.url) || /\/projects(\/|$|\?)/.test(config.url);
+        if (isProjectRequest && config.data && typeof config.data === 'object') {
+            if ([6, 7, 8, 9].includes(Number(config.data.id))) {
+                const msg = `CRITICAL INTERCEPTOR: Blocked request with Ghost ID in body: ${config.data.id}`;
+                console.error(msg);
+                alert('系统安全拦截：检测到非法项目ID数据。请刷新页面。');
+                return Promise.reject(new Error(msg));
+            }
         }
     }
     return config;
 }, error => {
     return Promise.reject(error);
 });
+
+// --- AXIOS RESPONSE INTERCEPTOR ---
+// Automatically extract 'data' from standard response format {code, message, data}
+axios.interceptors.response.use(
+    response => {
+        if (response.data && typeof response.data === 'object' && 'code' in response.data) {
+            return { ...response, data: response.data.data };
+        }
+        return response;
+    },
+    error => {
+        const res = error.response;
+        if (res && res.data && res.data.message) {
+            error.message = res.data.message;
+        }
+        return Promise.reject(error);
+    }
+);
 
 // --- 常量定义 ---
 const ROLES = {
@@ -63,6 +82,46 @@ const STATUS_MAP = {
     'under_final_review': { text: '结题评审中', type: 'warning' }, // New
     'finished': { text: '已结项', type: 'success' },
     'conclusion_rejected': { text: '结项-已驳回', type: 'danger' }
+};
+
+const CNMU_COLLEGE_MAJOR = {
+    "文学与新闻传播学院": ["汉语言文学", "汉语国际教育", "新闻学", "广播电视学", "广告学"],
+    "外语学院": ["英语", "日语", "翻译", "商务英语"],
+    "音乐舞蹈学院": ["音乐学", "舞蹈表演"],
+    "体育学院": ["社会体育指导与管理"],
+    "美术学院": ["美术学", "绘画", "动画", "视觉传达设计", "环境设计", "服装与服饰设计", "建筑学"],
+    "法学院": ["法学", "知识产权", "法学(数字法学卓越人才实验班)", "法学(涉外法治卓越人才实验班)"],
+    "民族学与社会学学院": ["社会学", "社会工作", "民族学", "历史学", "文物与博物馆学"],
+    "马克思主义学院": ["思想政治教育"],
+    "中华民族共同体学院": [],
+    "经济学院": ["经济学", "经济统计学", "金融学", "金融工程", "保险学", "国际经济与贸易", "数字经济"],
+    "教育学院": ["教育学", "教育技术学", "应用心理学"],
+    "管理学院": ["信息管理与信息系统", "工商管理", "市场营销", "会计学", "财务管理", "人力资源管理", "电子商务", "旅游管理"],
+    "公共管理学院": ["政治学与行政学", "行政管理", "劳动与社会保障", "土地资源管理"],
+    "国家安全学院": [],
+    "化学与材料科学学院": ["应用化学", "材料化学", "高分子材料与工程", "化学工程与工艺"],
+    "生命科学学院": ["生物技术", "食品质量与安全", "生物工程", "生物制药"],
+    "资源与环境学院": ["水文与水资源工程", "资源循环科学与工程", "环境工程", "环境科学"],
+    "药学院": ["化学生物学", "药学", "药物制剂", "药物分析"],
+    "数学与统计学学院": ["数学与应用数学", "信息与计算科学", "应用统计学", "数据科学与大数据技术"],
+    "电子信息工程学院（机器人学院）": ["电子信息工程", "通信工程", "光电信息科学与工程", "集成电路设计与集成系统"],
+    "计算机学院（人工智能学院）": ["计算机科学与技术", "软件工程", "网络工程", "人工智能", "机械设计制造及其自动化", "自动化", "轨道交通信号与控制", "网络空间安全", "数据科学"],
+    "生物医学工程学院": ["生物医学工程", "医学信息工程", "智能医学工程"],
+    "预科教育学院": [],
+    "创新创业学院": []
+};
+
+const CNMU_COLLEGES = Object.keys(CNMU_COLLEGE_MAJOR);
+
+const ORG_DEPARTMENTS = ["创新创业学院", "信息化建设管理处"];
+
+const ROLE_FIELD2_OPTIONS = {
+    system_admin: ["系统管理员"],
+    school_approver: ["处长", "科长", "科员"],
+    project_admin: ["科长", "科员", "项目专员"],
+    college_approver: ["副院长", "教学秘书", "辅导员"],
+    judge: ["教授", "副教授"],
+    teacher: ["教授", "副教授", "讲师"]
 };
 
 // --- 组件定义 ---
@@ -118,9 +177,31 @@ const Login = {
                         </el-select>
                     </el-form-item>
                     <el-form-item label="真实姓名" required><el-input v-model="form.real_name"></el-input></el-form-item>
-                    <el-form-item label="学号/工号" required><el-input v-model="form.identity_number"></el-input></el-form-item>
-                    <el-form-item label="学院"><el-input v-model="form.college"></el-input></el-form-item>
-                    <el-form-item label="系/专业"><el-input v-model="form.department"></el-input></el-form-item>
+                    <el-form-item :label="identityLabel" required>
+                        <el-input v-model="form.identity_number" @input="rememberIdentity(form.role, form.identity_number)"></el-input>
+                    </el-form-item>
+                    <el-form-item label="所属学院">
+                        <el-select v-model="form.college" filterable style="width: 100%">
+                            <el-option v-for="c in colleges" :key="c" :label="c" :value="c"></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <template v-if="form.role === 'student'">
+                        <el-form-item label="专业">
+                            <el-select v-model="form.department" filterable allow-create default-first-option style="width: 100%">
+                                <el-option v-for="m in majorsForSelectedCollege" :key="m" :label="m" :value="m"></el-option>
+                            </el-select>
+                        </el-form-item>
+                    </template>
+                    <template v-else>
+                        <el-form-item label="职称">
+                            <el-select v-model="form.department" filterable allow-create default-first-option style="width: 100%">
+                                <el-option v-for="t in teacherTitles" :key="t" :label="t" :value="t"></el-option>
+                            </el-select>
+                        </el-form-item>
+                        <el-form-item label="教研室">
+                            <el-input v-model="form.teaching_office"></el-input>
+                        </el-form-item>
+                    </template>
                 </template>
             </el-form>
         </el-card>
@@ -137,14 +218,54 @@ const Login = {
                 real_name: '',
                 college: '',
                 department: '',
-                identity_number: ''
+                identity_number: '',
+                teaching_office: ''
+            }
+        }
+    },
+    computed: {
+        colleges() {
+            return CNMU_COLLEGES;
+        },
+        majorsForSelectedCollege() {
+            const c = this.form.college;
+            return Array.isArray(CNMU_COLLEGE_MAJOR[c]) ? CNMU_COLLEGE_MAJOR[c] : [];
+        },
+        teacherTitles() {
+            return ROLE_FIELD2_OPTIONS.teacher || [];
+        },
+        identityLabel() {
+            return this.form.role === 'student' ? '学号' : '工号';
+        }
+    },
+    watch: {
+        'form.role'(val) {
+            const mem = this.loadIdentityMemory(val);
+            if (!this.form.identity_number && mem) {
+                this.form.identity_number = mem;
+            }
+            if (val === 'student') {
+                this.form.teaching_office = '';
             }
         }
     },
     methods: {
+        rememberIdentity(role, value) {
+            try {
+                const k = `id_mem_${role || 'unknown'}`;
+                if (value === undefined || value === null) return;
+                localStorage.setItem(k, String(value));
+            } catch (e) {}
+        },
+        loadIdentityMemory(role) {
+            try {
+                const k = `id_mem_${role || 'unknown'}`;
+                return localStorage.getItem(k) || '';
+            } catch (e) { return ''; }
+        },
         toggleMode() {
             this.isRegister = !this.isRegister;
-            this.form = { username: '', password: '', role: 'student', real_name: '', college: '', department: '', identity_number: '' };
+            this.form = { username: '', password: '', role: 'student', real_name: '', college: '', department: '', identity_number: this.loadIdentityMemory('student'), teaching_office: '' };
         },
         async handleSubmit() {
             if (!this.form.username || !this.form.password) {
@@ -161,11 +282,11 @@ const Login = {
                 } else {
                     const res = await axios.post('/api/login', this.form);
                     ElementPlus.ElMessage.success('登录成功');
-                    this.$emit('login-success', res.data.user);
+                    this.$emit('login-success', res.data);
                     this.$router.push('/');
                 }
             } catch (error) {
-                ElementPlus.ElMessage.error(error.response?.data?.error || '操作失败');
+                ElementPlus.ElMessage.error(error.message || '操作失败');
             } finally {
                 this.loading = false;
             }
@@ -629,11 +750,24 @@ const Dashboard = {
                                     <el-form-item label="角色">
                                         <el-tag>{{ getRoleName(profileForm.role) }}</el-tag>
                                     </el-form-item>
-                                    <el-form-item label="学院">
-                                        <el-input v-model="profileForm.college" :disabled="user?.role === 'student'"></el-input>
+                                    <el-form-item :label="getField1Label(profileForm.role)">
+                                        <el-select v-model="profileForm.college" filterable style="width: 100%">
+                                            <el-option v-for="c in getField1Options(profileForm.role)" :key="c" :label="c" :value="c"></el-option>
+                                        </el-select>
                                     </el-form-item>
-                                    <el-form-item label="专业/部门">
-                                        <el-input v-model="profileForm.department"></el-input>
+                                    <el-form-item :label="getIdentityLabel(profileForm.role)">
+                                        <el-input v-model="profileForm.identity_number" @input="rememberIdentity(profileForm.role, profileForm.identity_number)"></el-input>
+                                    </el-form-item>
+                                    <el-form-item :label="getField2Label(profileForm.role)">
+                                        <el-select v-model="profileForm.department" filterable allow-create default-first-option style="width: 100%">
+                                            <el-option v-for="opt in getField2Options(profileForm.role, profileForm.college)" :key="opt" :label="opt" :value="opt"></el-option>
+                                        </el-select>
+                                    </el-form-item>
+                                    <el-form-item v-if="profileForm.role === 'teacher'" label="教研室">
+                                        <el-input v-model="profileForm.teaching_office"></el-input>
+                                    </el-form-item>
+                                    <el-form-item v-if="profileForm.role === 'judge'" label="研究领域">
+                                        <el-input v-model="profileForm.research_area"></el-input>
                                     </el-form-item>
                                     <el-form-item label="联系电话">
                                         <el-input v-model="profileForm.phone"></el-input>
@@ -860,12 +994,11 @@ const Dashboard = {
                          <el-table-column prop="title" label="批次名称" min-width="200">
                              <template #default="scope">
                                  <strong>{{ scope.row.title }}</strong>
-                                 <el-tag v-if="scope.row.form_config && scope.row.form_config.batch_type === 'program'" size="small" type="success" style="margin-left: 5px">常规项目</el-tag>
-                                 <el-tag v-else-if="scope.row.form_config && scope.row.form_config.batch_type === 'competition'" size="small" type="warning" style="margin-left: 5px">学科竞赛</el-tag>
-                                 <el-tag v-if="scope.row.level" size="small" style="margin-left: 5px;">{{ scope.row.level }}</el-tag>
+                                 <el-tag v-if="scope.row.system_type" size="small" type="success" style="margin-left: 5px">{{ scope.row.system_type }}</el-tag>
+                                 <el-tag v-if="scope.row.competition_level" size="small" type="warning" style="margin-left: 5px">{{ scope.row.competition_level }}</el-tag>
                              </template>
                          </el-table-column>
-                         <el-table-column prop="organizer" label="承办单位" width="150"></el-table-column>
+                         <el-table-column prop="school_organizer" label="承办单位" width="150"></el-table-column>
                          <el-table-column label="报名时间" width="200">
                              <template #default="scope">
                                  {{ scope.row.registration_start }} 至 {{ scope.row.registration_end }}
@@ -899,7 +1032,7 @@ const Dashboard = {
                                     </el-button>
                                 </template>
                                 <el-button v-else-if="scope.row.status === 'active'" type="primary" size="small" @click="applyCompetition(scope.row)">
-                                    {{ (scope.row.form_config && scope.row.form_config.batch_type === 'program') ? '申报项目' : '报名参赛' }}
+                                    报名参赛
                                 </el-button>
                                 <el-button v-else size="small" disabled>不可报名</el-button>
                             </template>
@@ -907,28 +1040,29 @@ const Dashboard = {
                      </el-table>
                 </el-tab-pane>
 
-                <!-- 赛事管理 (管理员可见) -->
-                <el-tab-pane v-if="canManageSystem" label="申报批次管理" name="comp_mgmt">
+                <!-- 赛事管理 (项目管理员可见) -->
+                <el-tab-pane v-if="canManageCompetitions" label="申报批次管理" name="comp_mgmt">
                      <div class="filter-bar">
                          <el-button type="primary" @click="openCompDialog()">发布申报批次</el-button>
                      </div>
                      <el-table :data="competitions" style="width: 100%" v-loading="loading">
                         <el-table-column prop="id" label="ID" width="60"></el-table-column>
-                        <el-table-column prop="title" label="批次名称">
+                        <el-table-column prop="title" label="批次名称" min-width="200">
                              <template #default="scope">
                                  <span>{{ scope.row.title }}</span>
-                                 <el-tag v-if="scope.row.form_config && scope.row.form_config.batch_type === 'program'" size="small" type="success" style="margin-left: 5px">常规项目</el-tag>
-                                 <el-tag v-else-if="scope.row.form_config && scope.row.form_config.batch_type === 'competition'" size="small" type="warning" style="margin-left: 5px">学科竞赛</el-tag>
+                                 <el-tag v-if="scope.row.system_type" size="small" type="success" style="margin-left: 5px">{{ scope.row.system_type }}</el-tag>
                              </template>
                         </el-table-column>
-                        <el-table-column prop="level" label="级别"></el-table-column>
-                        <el-table-column prop="status" label="状态"></el-table-column>
-                        <el-table-column prop="template_type" label="模板类型">
+                        <el-table-column prop="competition_level" label="赛事等级" width="100"></el-table-column>
+                        <el-table-column prop="status" label="状态" width="100">
                             <template #default="scope">
-                                {{ scope.row.template_type === 'startup' ? '创业组(Template 2)' : '默认(Template 1)' }}
+                                <el-tag :type="scope.row.status === 'active' ? 'success' : (scope.row.status === 'upcoming' ? 'info' : 'info')">
+                                    {{ scope.row.status === 'active' ? '进行中' : (scope.row.status === 'upcoming' ? '未开始' : '已结束') }}
+                                </el-tag>
                             </template>
                         </el-table-column>
-                        <el-table-column label="操作">
+                        <el-table-column prop="school_organizer" label="承办单位"></el-table-column>
+                        <el-table-column label="操作" width="150">
                             <template #default="scope">
                                 <el-button size="small" @click="openCompDialog(scope.row)">编辑</el-button>
                                 <el-button size="small" type="danger" @click="deleteCompetition(scope.row.id)">删除</el-button>
@@ -936,6 +1070,35 @@ const Dashboard = {
                         </el-table-column>
                     </el-table>
                </el-tab-pane>
+
+                <el-tab-pane v-if="canManageAwards" label="获奖记录管理" name="award_mgmt">
+                    <div class="filter-bar" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                            <el-button type="primary" @click="openAwardDialog()">新增获奖记录</el-button>
+                            <el-button @click="fetchAwards">刷新</el-button>
+                        </div>
+                    </div>
+                    <el-table :data="awardsRecords" style="width: 100%" v-loading="awardsRecordsLoading">
+                        <el-table-column prop="id" label="ID" width="70"></el-table-column>
+                        <el-table-column prop="project_title" label="项目名称" min-width="220"></el-table-column>
+                        <el-table-column prop="stage" label="阶段" width="90">
+                            <template #default="scope">{{ getReviewStageText(scope.row.stage) }}</template>
+                        </el-table-column>
+                        <el-table-column prop="award_level" label="获奖等级" width="120">
+                            <template #default="scope">{{ getAwardLevelText(scope.row.award_level) }}</template>
+                        </el-table-column>
+                        <el-table-column prop="award_name" label="奖项名称" min-width="160"></el-table-column>
+                        <el-table-column prop="award_time" label="获奖时间" width="120"></el-table-column>
+                        <el-table-column prop="issuer" label="颁奖单位" min-width="160"></el-table-column>
+                        <el-table-column prop="created_at" label="录入时间" width="170"></el-table-column>
+                        <el-table-column label="操作" width="160" fixed="right">
+                            <template #default="scope">
+                                <el-button size="small" @click="openAwardDialog(scope.row)">编辑</el-button>
+                                <el-button size="small" type="danger" @click="deleteAward(scope.row.id)">删除</el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </el-tab-pane>
 
             <!-- 2. 用户管理 (管理员可见) -->
             <el-tab-pane v-if="canManageUsers" label="用户管理" name="users">
@@ -1032,6 +1195,35 @@ const Dashboard = {
                          <el-button type="primary" @click="backupSystem" :loading="backupLoading">数据备份</el-button>
                     </div>
                 </div>
+                <el-card shadow="never" class="mt-4" header="权限模式配置">
+                    <el-form label-width="110px">
+                        <el-form-item label="权限模式">
+                            <el-select v-model="permissionModeDraft" style="width: 260px" @change="confirmPermissionModeChange">
+                                <el-option label="混合模式（默认）" value="mixed"></el-option>
+                                <el-option label="严格模式" value="strict"></el-option>
+                            </el-select>
+                            <span style="margin-left: 10px; color: #999; font-size: 12px;">
+                                当前生效：{{ permissionMode === 'strict' ? '严格模式' : '混合模式' }}
+                            </span>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-alert
+                                v-if="permissionModeDraft === 'strict'"
+                                title="严格模式：学校管理员/学院管理员将失去用户管理权限（增删改查/审核等），仅系统管理员保留。"
+                                type="warning"
+                                :closable="false"
+                                show-icon>
+                            </el-alert>
+                            <el-alert
+                                v-else
+                                title="混合模式：系统管理员全权限；学校管理员可管理全校用户；学院管理员可管理本院用户。"
+                                type="info"
+                                :closable="false"
+                                show-icon>
+                            </el-alert>
+                        </el-form-item>
+                    </el-form>
+                </el-card>
                 <el-row :gutter="20" class="mt-4">
                     <el-col :span="12">
                         <el-card header="项目统计">
@@ -1058,7 +1250,7 @@ const Dashboard = {
         </el-tabs>
 
         <!-- 申请新项目弹窗 -->
-        <el-dialog v-model="showCreateDialog" title="申请新项目" width="900px" destroy-on-close top="5vh" @close="handleDialogClose">
+        <el-dialog v-model="showCreateDialog" :title="createDialogTitle" width="900px" destroy-on-close top="5vh" @close="handleDialogClose">
             <el-steps :active="activeStep" finish-status="success" align-center style="margin-bottom: 20px">
                 <el-step title="基本信息"></el-step>
                 <el-step title="详细信息"></el-step>
@@ -1069,25 +1261,58 @@ const Dashboard = {
                 <!-- Dynamic Form Rendering (Step 1) -->
                 <div v-show="activeStep === 0">
                     <template v-if="createForm.form_config?.groups && createForm.form_config.groups.length > 0">
-                        <div v-for="(group, gIndex) in createForm.form_config.groups" :key="gIndex">
+                        <template v-for="(group, gIndex) in createForm.form_config.groups" :key="gIndex">
+                        <div v-if="shouldShow(createForm, group)">
                             <el-divider v-if="group.title" content-position="left">{{ group.title }}</el-divider>
                             <el-row :gutter="20">
-                                <el-col v-for="(field, fIndex) in group.fields" :key="fIndex" :span="field.type === 'textarea' || field.type === 'richtext' ? 24 : 12">
+                                <template v-for="(field, fIndex) in group.fields" :key="fIndex">
+                                <el-col v-if="shouldShow(createForm, field)" :span="field.type === 'textarea' || field.type === 'richtext' || field.type === 'table' ? 24 : 12">
                                     <el-form-item :label="field.label" :required="field.required">
                                         <!-- Text Input -->
-                                        <el-input v-if="field.type === 'text'" v-model="getFieldValue(createForm, field.key)" :placeholder="field.placeholder" :disabled="field.disabled"></el-input>
+                                        <el-input
+                                            v-if="field.type === 'text'"
+                                            :model-value="getFieldValue(createForm, field.key)"
+                                            @update:modelValue="val => setFieldValue(createForm, field.key, val)"
+                                            :placeholder="field.placeholder"
+                                            :disabled="field.disabled"></el-input>
                                         
                                         <!-- Textarea -->
-                                        <el-input v-if="field.type === 'textarea'" v-model="getFieldValue(createForm, field.key)" type="textarea" :rows="3" :placeholder="field.placeholder" :disabled="field.disabled"></el-input>
+                                        <el-input
+                                            v-if="field.type === 'textarea'"
+                                            type="textarea"
+                                            :rows="3"
+                                            :model-value="getFieldValue(createForm, field.key)"
+                                            @update:modelValue="val => setFieldValue(createForm, field.key, val)"
+                                            :placeholder="field.placeholder"
+                                            :disabled="field.disabled"></el-input>
+
+                                        <el-input
+                                            v-if="field.type === 'richtext'"
+                                            type="textarea"
+                                            :rows="6"
+                                            :model-value="getFieldValue(createForm, field.key)"
+                                            @update:modelValue="val => setFieldValue(createForm, field.key, val)"
+                                            :placeholder="field.placeholder"
+                                            :disabled="field.disabled"></el-input>
                                         
                                         <!-- Select -->
-                                        <el-select v-if="field.type === 'select'" v-model="getFieldValue(createForm, field.key)" style="width: 100%" :placeholder="field.placeholder" :disabled="field.disabled" :filterable="true">
+                                        <el-select
+                                            v-if="field.type === 'select'"
+                                            :model-value="getFieldValue(createForm, field.key)"
+                                            @update:modelValue="val => setFieldValue(createForm, field.key, val)"
+                                            style="width: 100%"
+                                            :placeholder="field.placeholder"
+                                            :disabled="field.disabled"
+                                            :filterable="true">
                                             <!-- Handle dynamic options vs static options -->
                                             <template v-if="field.key === 'project_type'">
                                                 <el-option v-for="t in allowedProjectTypes" :key="t.value" :label="t.label" :value="t.value"></el-option>
                                             </template>
                                             <template v-else-if="field.key === 'college'">
                                                 <el-option v-for="c in colleges" :key="c" :label="c" :value="c"></el-option>
+                                            </template>
+                                            <template v-else-if="field.key === 'department' || String(field.key).endsWith('.department')">
+                                                <el-option v-for="m in getMajorsByCollege(getFieldValue(createForm, 'extra_info.leader_info.college') || getFieldValue(createForm, 'college'))" :key="m" :label="m" :value="m"></el-option>
                                             </template>
                                             <template v-else-if="field.key === 'inspiration_source'">
                                                  <!-- Special handling for inspiration source remote search -->
@@ -1102,20 +1327,84 @@ const Dashboard = {
                                         </el-select>
                                         
                                         <!-- Date -->
-                                        <el-date-picker v-if="field.type === 'date'" v-model="getFieldValue(createForm, field.key)" type="date" value-format="YYYY-MM-DD" style="width: 100%" :placeholder="field.placeholder"></el-date-picker>
+                                        <el-date-picker
+                                            v-if="field.type === 'date'"
+                                            :model-value="getFieldValue(createForm, field.key)"
+                                            @update:modelValue="val => setFieldValue(createForm, field.key, val)"
+                                            type="date"
+                                            value-format="YYYY-MM-DD"
+                                            style="width: 100%"
+                                            :placeholder="field.placeholder"></el-date-picker>
                                         
                                         <!-- Number -->
-                                        <el-input-number v-if="field.type === 'number'" v-model="getFieldValue(createForm, field.key)" style="width: 100%" :min="0"></el-input-number>
+                                        <el-input-number
+                                            v-if="field.type === 'number'"
+                                            :model-value="getFieldValue(createForm, field.key)"
+                                            @update:modelValue="val => setFieldValue(createForm, field.key, val)"
+                                            style="width: 100%"
+                                            :min="0"></el-input-number>
                                         
                                         <!-- Radio -->
-                                        <el-radio-group v-if="field.type === 'radio'" v-model="getFieldValue(createForm, field.key)">
+                                        <el-radio-group
+                                            v-if="field.type === 'radio'"
+                                            :model-value="getFieldValue(createForm, field.key)"
+                                            @update:modelValue="val => setFieldValue(createForm, field.key, val)">
                                             <el-radio v-for="opt in field.options" :key="opt.value" :label="opt.value">{{ opt.label }}</el-radio>
                                         </el-radio-group>
 
+                                        <el-checkbox-group
+                                            v-if="field.type === 'checkbox'"
+                                            :model-value="Array.isArray(getFieldValue(createForm, field.key)) ? getFieldValue(createForm, field.key) : []"
+                                            @update:modelValue="val => setFieldValue(createForm, field.key, val)">
+                                            <el-checkbox v-for="opt in field.options" :key="opt.value" :label="opt.value">{{ opt.label }}</el-checkbox>
+                                        </el-checkbox-group>
+
+                                        <div v-if="field.type === 'file'">
+                                            <input type="file" :accept="field.accept" @change="(e) => handleFileUpload(e, field.key)">
+                                            <div v-if="getFieldValue(createForm, field.key)" style="margin-top: 5px;">
+                                                <el-tag type="success" style="margin-right: 10px;">已上传</el-tag>
+                                                <el-link :href="getFieldValue(createForm, field.key)" target="_blank" type="primary" style="margin-right: 10px;">查看</el-link>
+                                                <el-button type="danger" link size="small" @click="setFieldValue(createForm, field.key, '')">删除</el-button>
+                                            </div>
+                                            <div v-if="field.placeholder" style="font-size: 12px; color: #999;">{{ field.placeholder }}</div>
+                                        </div>
+
+                                        <div v-if="field.type === 'table' && field.columns && Array.isArray(field.columns)">
+                                            <div style="margin-bottom: 6px;">
+                                                <el-button size="small" type="primary" @click="addTableRow(createForm, field.key, field.columns)">新增</el-button>
+                                            </div>
+                                            <el-table :data="getTableRows(createForm, field.key)" border size="small">
+                                                <el-table-column v-for="col in field.columns" :key="col.key" :prop="col.key" :label="col.label" :min-width="col.width || 120">
+                                                    <template #default="scope">
+                                                        <el-input
+                                                            :model-value="scope.row[col.key]"
+                                                            @update:modelValue="val => updateTableCell(createForm, field.key, scope.$index, col.key, val)"
+                                                        ></el-input>
+                                                    </template>
+                                                </el-table-column>
+                                                <el-table-column label="操作" width="80" fixed="right">
+                                                    <template #default="scope">
+                                                        <el-button type="danger" link size="small" @click="removeTableRow(createForm, field.key, scope.$index)">删除</el-button>
+                                                    </template>
+                                                </el-table-column>
+                                            </el-table>
+                                            <div v-if="field.placeholder" style="font-size: 12px; color: #999; margin-top: 6px;">{{ field.placeholder }}</div>
+                                        </div>
+
+                                        <el-input
+                                            v-if="field.type === 'table' && (!field.columns || !Array.isArray(field.columns))"
+                                            type="textarea"
+                                            :rows="4"
+                                            :model-value="typeof getFieldValue(createForm, field.key) === 'string' ? getFieldValue(createForm, field.key) : JSON.stringify(getFieldValue(createForm, field.key) || [], null, 2)"
+                                            @update:modelValue="val => setFieldValue(createForm, field.key, val)"
+                                            :placeholder="field.placeholder"></el-input>
+
                                     </el-form-item>
                                 </el-col>
+                                </template>
                             </el-row>
                         </div>
+                        </template>
                     </template>
                     <template v-else>
                         <!-- Fallback for legacy templates -->
@@ -1381,9 +1670,21 @@ const Dashboard = {
                         </template>
                     </el-select>
                 </el-form-item>
-                <el-form-item label="学院"><el-input v-model="createUserForm.college"></el-input></el-form-item>
-                <el-form-item label="部门/专业"><el-input v-model="createUserForm.department"></el-input></el-form-item>
-                <el-form-item label="证件号"><el-input v-model="createUserForm.identity_number" placeholder="学号/工号"></el-input></el-form-item>
+                <el-form-item :label="getField1Label(createUserForm.role)">
+                    <el-select v-model="createUserForm.college" :disabled="user?.role === 'college_approver'" filterable style="width: 100%">
+                        <el-option v-for="c in getField1Options(createUserForm.role)" :key="c" :label="c" :value="c"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item :label="getIdentityLabel(createUserForm.role)">
+                    <el-input v-model="createUserForm.identity_number" @input="rememberIdentity(createUserForm.role, createUserForm.identity_number)"></el-input>
+                </el-form-item>
+                <el-form-item :label="getField2Label(createUserForm.role)">
+                    <el-select v-model="createUserForm.department" filterable allow-create default-first-option style="width: 100%">
+                        <el-option v-for="opt in getField2Options(createUserForm.role, createUserForm.college)" :key="opt" :label="opt" :value="opt"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item v-if="createUserForm.role === 'teacher'" label="教研室"><el-input v-model="createUserForm.teaching_office"></el-input></el-form-item>
+                <el-form-item v-if="createUserForm.role === 'judge'" label="研究领域"><el-input v-model="createUserForm.research_area"></el-input></el-form-item>
                 <el-form-item label="密码"><el-input v-model="createUserForm.password" placeholder="默认 123456" type="password" show-password></el-input></el-form-item>
             </el-form>
             <template #footer>
@@ -1413,9 +1714,21 @@ const Dashboard = {
                         </template>
                     </el-select>
                 </el-form-item>
-                <el-form-item label="学院"><el-input v-model="editUserForm.college"></el-input></el-form-item>
-                <el-form-item label="部门/专业"><el-input v-model="editUserForm.department"></el-input></el-form-item>
-                <el-form-item label="证件号"><el-input v-model="editUserForm.identity_number" placeholder="学号/工号"></el-input></el-form-item>
+                <el-form-item :label="getField1Label(editUserForm.role)">
+                    <el-select v-model="editUserForm.college" :disabled="user?.role === 'college_approver'" filterable style="width: 100%">
+                        <el-option v-for="c in getField1Options(editUserForm.role)" :key="c" :label="c" :value="c"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item :label="getIdentityLabel(editUserForm.role)">
+                    <el-input v-model="editUserForm.identity_number" @input="rememberIdentity(editUserForm.role, editUserForm.identity_number)"></el-input>
+                </el-form-item>
+                <el-form-item :label="getField2Label(editUserForm.role)">
+                    <el-select v-model="editUserForm.department" filterable allow-create default-first-option style="width: 100%">
+                        <el-option v-for="opt in getField2Options(editUserForm.role, editUserForm.college)" :key="opt" :label="opt" :value="opt"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item v-if="editUserForm.role === 'teacher'" label="教研室"><el-input v-model="editUserForm.teaching_office"></el-input></el-form-item>
+                <el-form-item v-if="editUserForm.role === 'judge'" label="研究领域"><el-input v-model="editUserForm.research_area"></el-input></el-form-item>
                 <el-form-item label="重置密码"><el-input v-model="editUserForm.password" placeholder="留空则不修改" type="password" show-password></el-input></el-form-item>
                 <el-form-item label="临时密码">
                     <div style="display:flex;gap:8px;align-items:center;">
@@ -1657,6 +1970,139 @@ const Dashboard = {
                                 </template>
                             </template>
                         </el-form>
+                    </el-tab-pane>
+
+                    <el-tab-pane v-if="currentProject.template_type === 'training'" label="升级申请" name="upgrade">
+                        <div style="margin-bottom: 10px;">
+                            <el-tag>当前级别：{{ getProjectLevelText(currentProject.level) }}</el-tag>
+                            <el-tag v-if="hasPendingUpgradeRequest()" type="warning" style="margin-left: 6px;">有待处理申请</el-tag>
+                        </div>
+                        <el-button
+                            v-if="user?.role === 'student' && canApplyUpgrade(currentProject)"
+                            type="primary"
+                            size="small"
+                            style="margin-bottom: 10px;"
+                            @click="openUpgradeDialog(currentProject)">
+                            申请升级
+                        </el-button>
+                        <el-table :data="upgradeRequests" border size="small" v-loading="upgradeRequestsLoading">
+                            <el-table-column prop="created_at" label="申请时间" width="170"></el-table-column>
+                            <el-table-column label="升级方向" width="160">
+                                <template #default="scope">
+                                    {{ getProjectLevelText(scope.row.from_level) }} → {{ getProjectLevelText(scope.row.to_level) }}
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="状态" width="100">
+                                <template #default="scope">
+                                    <el-tag :type="scope.row.status === 'approved' ? 'success' : (scope.row.status === 'rejected' ? 'danger' : 'warning')">
+                                        {{ scope.row.status === 'approved' ? '通过' : (scope.row.status === 'rejected' ? '驳回' : '待处理') }}
+                                    </el-tag>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="review_comment" label="审核意见"></el-table-column>
+                            <el-table-column v-if="canReviewUpgradeRequests()" label="操作" width="160">
+                                <template #default="scope">
+                                    <el-button v-if="scope.row.status === 'pending'" size="small" type="success" @click="reviewUpgradeRequest(scope.row.id, 'approved')">通过</el-button>
+                                    <el-button v-if="scope.row.status === 'pending'" size="small" type="danger" @click="reviewUpgradeRequest(scope.row.id, 'rejected')">驳回</el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </el-tab-pane>
+
+                    <el-tab-pane v-if="canViewAdminReview()" label="后台评审/获奖" name="admin_review">
+                        <el-form :model="adminReviewForm" label-width="140px">
+                            <el-row :gutter="20">
+                                <el-col :span="12">
+                                    <el-form-item label="当前竞赛阶段">
+                                        <el-select v-model="adminReviewForm.review_stage" style="width:100%" :disabled="!canEditAdminField('review_stage')">
+                                            <el-option label="校赛" value="school"></el-option>
+                                            <el-option label="省赛" value="provincial"></el-option>
+                                            <el-option label="国赛" value="national"></el-option>
+                                        </el-select>
+                                    </el-form-item>
+                                </el-col>
+                                <el-col :span="12">
+                                    <el-form-item label="学院赛评审结果">
+                                        <el-select v-model="adminReviewForm.college_review_result" style="width:100%" :disabled="!canEditAdminField('college_review_result')">
+                                            <el-option label="待评审" value="pending"></el-option>
+                                            <el-option label="通过" value="approved"></el-option>
+                                            <el-option label="不通过" value="rejected"></el-option>
+                                        </el-select>
+                                    </el-form-item>
+                                </el-col>
+                            </el-row>
+                            <el-row :gutter="20">
+                                <el-col :span="12">
+                                    <el-form-item label="校赛评审结果">
+                                        <el-select v-model="adminReviewForm.school_review_result" style="width:100%" :disabled="!canEditAdminField('school_review_result')">
+                                            <el-option label="待评审" value="pending"></el-option>
+                                            <el-option label="通过" value="approved"></el-option>
+                                            <el-option label="不通过" value="rejected"></el-option>
+                                        </el-select>
+                                    </el-form-item>
+                                </el-col>
+                                <el-col :span="12">
+                                    <el-form-item label="省赛获奖等级">
+                                        <el-select v-model="adminReviewForm.provincial_award_level" style="width:100%" :disabled="!canEditAdminField('provincial_award_level')">
+                                            <el-option label="特等" value="special"></el-option>
+                                            <el-option label="一等" value="first"></el-option>
+                                            <el-option label="二等" value="second"></el-option>
+                                            <el-option label="三等" value="third"></el-option>
+                                            <el-option label="优秀奖" value="excellent"></el-option>
+                                            <el-option label="无" value="none"></el-option>
+                                        </el-select>
+                                    </el-form-item>
+                                </el-col>
+                            </el-row>
+                            <el-row :gutter="20">
+                                <el-col :span="12">
+                                    <el-form-item label="国赛获奖等级">
+                                        <el-select v-model="adminReviewForm.national_award_level" style="width:100%" :disabled="!canEditAdminField('national_award_level')">
+                                            <el-option label="特等" value="special"></el-option>
+                                            <el-option label="一等" value="first"></el-option>
+                                            <el-option label="二等" value="second"></el-option>
+                                            <el-option label="三等" value="third"></el-option>
+                                            <el-option label="优秀奖" value="excellent"></el-option>
+                                            <el-option label="无" value="none"></el-option>
+                                        </el-select>
+                                    </el-form-item>
+                                </el-col>
+                            </el-row>
+                            <el-form-item label="科研管理部门意见">
+                                <el-input v-model="adminReviewForm.research_admin_opinion" type="textarea" :rows="3" :disabled="!canEditAdminField('research_admin_opinion')"></el-input>
+                            </el-form-item>
+                            <el-form-item label="院系负责人或导师意见">
+                                <el-input v-model="adminReviewForm.department_head_opinion" type="textarea" :rows="3" :disabled="!canEditAdminField('department_head_opinion')"></el-input>
+                            </el-form-item>
+                            <el-form-item>
+                                <el-button type="primary" @click="saveAdminReview" :loading="adminReviewSaving" :disabled="!canEditAdminField('review_stage') && !canEditAdminField('college_review_result') && !canEditAdminField('school_review_result') && !canEditAdminField('provincial_award_level') && !canEditAdminField('national_award_level') && !canEditAdminField('research_admin_opinion') && !canEditAdminField('department_head_opinion')">
+                                    保存
+                                </el-button>
+                            </el-form-item>
+                        </el-form>
+
+                        <el-divider content-position="left">获奖记录</el-divider>
+                        <div style="margin-bottom: 10px;">
+                            <el-button v-if="canManageAwards" type="primary" size="small" @click="openAwardDialog()">新增获奖记录</el-button>
+                        </div>
+                        <el-table :data="projectAwards" border size="small" v-loading="projectAwardsLoading">
+                            <el-table-column prop="stage" label="阶段" width="90">
+                                <template #default="scope">{{ getReviewStageText(scope.row.stage) }}</template>
+                            </el-table-column>
+                            <el-table-column prop="award_level" label="等级" width="120">
+                                <template #default="scope">{{ getAwardLevelText(scope.row.award_level) }}</template>
+                            </el-table-column>
+                            <el-table-column prop="award_name" label="奖项名称" min-width="160"></el-table-column>
+                            <el-table-column prop="award_time" label="获奖时间" width="120"></el-table-column>
+                            <el-table-column prop="issuer" label="颁奖单位" min-width="160"></el-table-column>
+                            <el-table-column prop="created_at" label="录入时间" width="170"></el-table-column>
+                            <el-table-column v-if="canManageAwards" label="操作" width="140" fixed="right">
+                                <template #default="scope">
+                                    <el-button size="small" @click="openAwardDialog(scope.row)">编辑</el-button>
+                                    <el-button size="small" type="danger" @click="deleteAward(scope.row.id)">删除</el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
                     </el-tab-pane>
 
                     <!-- Tab 3: 团队成员 -->
@@ -1989,6 +2435,97 @@ const Dashboard = {
             </template>
         </el-dialog>
 
+        <el-dialog v-model="showUpgradeDialog" title="申请升级" width="520px">
+            <el-form :model="upgradeForm" label-width="90px">
+                <el-form-item label="升级目标" required>
+                    <el-select v-model="upgradeForm.to_level" style="width: 100%">
+                        <el-option label="省级" value="provincial"></el-option>
+                        <el-option label="国家级" value="national"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="申请说明">
+                    <el-input v-model="upgradeForm.reason" type="textarea" :rows="4" placeholder="可选"></el-input>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="showUpgradeDialog = false">取消</el-button>
+                <el-button type="primary" @click="submitUpgradeRequest" :loading="submitting">提交</el-button>
+            </template>
+        </el-dialog>
+
+        <el-dialog v-model="showLinkDachuangDialog" title="关联已有大创项目" width="700px">
+            <div style="margin-bottom: 10px; color: #666;">
+                检测到你已有立项的大创项目，可选择关联以复用成果数据（可跳过）。
+            </div>
+            <el-table :data="dachuangCandidates" border size="small" @row-click="row => dachuangLinkSelected = row.id">
+                <el-table-column width="60" label="">
+                    <template #default="scope">
+                        <el-tag v-if="dachuangLinkSelected === scope.row.id" type="success" size="small">已选</el-tag>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="title" label="项目名称"></el-table-column>
+                <el-table-column prop="level" label="级别" width="100">
+                    <template #default="scope">{{ getProjectLevelText(scope.row.level) }}</template>
+                </el-table-column>
+                <el-table-column prop="status" label="状态" width="120"></el-table-column>
+            </el-table>
+            <template #footer>
+                <el-button @click="skipLinkDachuang">跳过</el-button>
+                <el-button type="primary" @click="confirmLinkDachuang">确认关联</el-button>
+            </template>
+        </el-dialog>
+
+        <el-dialog v-model="showAwardDialog" title="获奖记录" width="650px">
+            <el-form :model="awardForm" label-width="90px">
+                <el-form-item label="关联项目" required>
+                    <el-select v-model="awardForm.project_id" filterable style="width: 100%">
+                        <el-option v-for="p in projects" :key="p.id" :label="p.title" :value="p.id"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-row :gutter="20">
+                    <el-col :span="12">
+                        <el-form-item label="阶段" required>
+                            <el-select v-model="awardForm.stage" style="width: 100%">
+                                <el-option label="省赛" value="provincial"></el-option>
+                                <el-option label="国赛" value="national"></el-option>
+                            </el-select>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="等级" required>
+                            <el-select v-model="awardForm.award_level" style="width: 100%">
+                                <el-option label="特等" value="special"></el-option>
+                                <el-option label="一等" value="first"></el-option>
+                                <el-option label="二等" value="second"></el-option>
+                                <el-option label="三等" value="third"></el-option>
+                                <el-option label="优秀奖" value="excellent"></el-option>
+                                <el-option label="无" value="none"></el-option>
+                            </el-select>
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+                <el-form-item label="奖项名称">
+                    <el-input v-model="awardForm.award_name"></el-input>
+                </el-form-item>
+                <el-row :gutter="20">
+                    <el-col :span="12">
+                        <el-form-item label="获奖时间">
+                            <el-input v-model="awardForm.award_time" placeholder="例如：2025-10"></el-input>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="颁奖单位">
+                            <el-input v-model="awardForm.issuer"></el-input>
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+            </el-form>
+            <template #footer>
+                <el-button @click="showAwardDialog = false">取消</el-button>
+                <el-button type="primary" @click="submitAward">保存</el-button>
+            </template>
+        </el-dialog>
+
         <!-- 评审弹窗 -->
         <el-dialog v-model="showReviewDialog" title="项目评审" width="500px">
             <el-form v-if="currentProject" label-width="80px">
@@ -2042,28 +2579,39 @@ const Dashboard = {
         </el-dialog>
         <!-- 赛事发布/编辑弹窗 -->
         <el-dialog v-model="showCompDialog" :title="isEditingComp ? '编辑申报批次' : '发布申报批次'" width="600px">
-            <el-form :model="compForm" label-width="100px">
+            <el-form :model="compForm" label-width="120px">
                 <el-form-item v-if="!isEditingComp" label="快速模板">
                     <div class="template-selection-container" style="width: 100%; border: 1px solid #dcdfe6; padding: 15px; border-radius: 4px;">
-                        <!-- 大创体系 -->
+                        <!-- 创新体系 -->
                         <div class="template-group">
-                            <div class="group-label" style="font-weight: bold; margin-bottom: 8px; color: #409EFF; border-left: 3px solid #409EFF; padding-left: 8px;">大创体系</div>
+                            <div class="group-label" style="font-weight: bold; margin-bottom: 8px; color: #409EFF; border-left: 3px solid #409EFF; padding-left: 8px;">创新体系</div>
                             <el-radio-group v-model="selectedPreset" @change="applyPreset" style="display: flex; flex-direction: column; align-items: flex-start;">
-                                <el-radio border label="innovation_program" style="margin-bottom: 8px; margin-left: 0; width: 100%;">大学生创新创业训练计划 (常规)</el-radio>
-                                <el-radio border label="startup_practice" style="margin-left: 0; width: 100%;">创业实践专项项目</el-radio>
+                                <el-radio border label="da_tiao" style="margin-bottom: 8px; margin-left: 0; width: 100%;">“挑战杯”全国大学生课外学术科技作品竞赛</el-radio>
+                                <el-radio border label="innovation_training" style="margin-left: 0; width: 100%;">大学生创新创业训练计划·创新训练项目</el-radio>
                             </el-radio-group>
                         </div>
                         
-                        <!-- 竞赛体系 -->
+                        <!-- 创业体系 -->
                         <div class="template-group" style="margin-top: 15px;">
-                            <div class="group-label" style="font-weight: bold; margin-bottom: 8px; color: #E6A23C; border-left: 3px solid #E6A23C; padding-left: 8px;">竞赛体系</div>
+                            <div class="group-label" style="font-weight: bold; margin-bottom: 8px; color: #E6A23C; border-left: 3px solid #E6A23C; padding-left: 8px;">创业体系</div>
                             <el-radio-group v-model="selectedPreset" @change="applyPreset" style="display: flex; flex-direction: column; align-items: flex-start;">
-                                <el-radio border label="internet_plus" style="margin-bottom: 8px; margin-left: 0; width: 100%;">“互联网+”大学生创新创业大赛</el-radio>
-                                <el-radio border label="challenge_cup" style="margin-left: 0; width: 100%;">“挑战杯”大学生课外学术科技作品竞赛</el-radio>
+                                <el-radio border label="internet_plus" style="margin-bottom: 8px; margin-left: 0; width: 100%;">中国国际大学生创新大赛</el-radio>
+                                <el-radio border label="xiao_tiao" style="margin-bottom: 8px; margin-left: 0; width: 100%;">“挑战杯”中国大学生创业计划竞赛</el-radio>
+                                <el-radio border label="dachuang_entrepreneurship_training" style="margin-bottom: 8px; margin-left: 0; width: 100%;">大学生创新创业训练计划·创业训练项目</el-radio>
+                                <el-radio border label="dachuang_entrepreneurship_practice" style="margin-left: 0; width: 100%;">大学生创新创业训练计划·创业实践项目</el-radio>
+                            </el-radio-group>
+                        </div>
+
+                        <!-- 三创赛体系 -->
+                        <div class="template-group" style="margin-top: 15px;">
+                            <div class="group-label" style="font-weight: bold; margin-bottom: 8px; color: #67C23A; border-left: 3px solid #67C23A; padding-left: 8px;">三创赛体系</div>
+                            <el-radio-group v-model="selectedPreset" @change="applyPreset" style="display: flex; flex-direction: column; align-items: flex-start;">
+                                <el-radio border label="sanchuang_regular" style="margin-bottom: 8px; margin-left: 0; width: 100%;">全国大学生电子商务“创新、创意及创业”挑战赛·常规赛</el-radio>
+                                <el-radio border label="sanchuang_practical" style="margin-left: 0; width: 100%;">全国大学生电子商务“创新、创意及创业”挑战赛·实战赛</el-radio>
                             </el-radio-group>
                         </div>
                     </div>
-                    <div style="font-size: 12px; color: #999; margin-top: 5px;">选择模板可自动填充以下配置，您仍可手动修改。</div>
+                    <div style="font-size: 12px; color: #999; margin-top: 5px;">选择模板可自动填充表单配置和主办/承办单位等信息，您仍可手动修改。</div>
                 </el-form-item>
                 <el-divider v-if="!isEditingComp"></el-divider>
 
@@ -2079,22 +2627,42 @@ const Dashboard = {
                     </div>
                 </el-form-item>
 
-                <el-form-item label="批次级别">
+                <el-form-item label="所属体系">
+                     <el-select v-model="compForm.system_type" placeholder="请选择体系">
+                         <el-option label="创新体系" value="创新体系"></el-option>
+                         <el-option label="创业体系" value="创业体系"></el-option>
+                         <el-option label="三创赛体系" value="三创赛体系"></el-option>
+                     </el-select>
+                </el-form-item>
+
+                <el-form-item label="赛事等级">
+                     <el-select v-model="compForm.competition_level" placeholder="请选择等级">
+                         <el-option label="A类" value="A类"></el-option>
+                         <el-option label="B类" value="B类"></el-option>
+                         <el-option label="C类" value="C类"></el-option>
+                         <el-option label="D类" value="D类"></el-option>
+                     </el-select>
+                </el-form-item>
+
+                <el-form-item label="国家/省级主办单位">
+                    <el-input v-model="compForm.national_organizer" placeholder="例如：教育部、团中央等"></el-input>
+                </el-form-item>
+
+                <el-form-item label="学校层面承办单位">
+                    <el-input v-model="compForm.school_organizer" placeholder="例如：校团委、创新创业学院等"></el-input>
+                </el-form-item>
+
+                <el-form-item label="原批次级别" v-show="false">
                      <el-select v-model="compForm.level">
                          <el-option label="校级" value="School"></el-option>
                          <el-option label="省级" value="Provincial"></el-option>
                          <el-option label="国家级" value="National"></el-option>
                      </el-select>
                 </el-form-item>
-                <el-form-item label="申请模板">
-                     <el-select v-model="compForm.template_type">
-                         <el-option label="训练类模板 (Training)" value="training"></el-option>
-                         <el-option label="竞赛类模板 (Competition)" value="competition"></el-option>
-                     </el-select>
-                </el-form-item>
-                <el-form-item label="承办单位">
+                <el-form-item label="原承办单位" v-show="false">
                     <el-input v-model="compForm.organizer"></el-input>
                 </el-form-item>
+
                 <el-form-item label="报名时间">
                      <el-col :span="11">
                          <el-date-picker v-model="compForm.registration_start" type="date" placeholder="开始日期" value-format="YYYY-MM-DD" style="width: 100%"></el-date-picker>
@@ -2113,21 +2681,6 @@ const Dashboard = {
                 </el-form-item>
                 <el-form-item label="描述/要求">
                     <el-input v-model="compForm.description" type="textarea" :rows="4"></el-input>
-                </el-form-item>
-                
-                <el-divider content-position="left">基础属性配置</el-divider>
-                <el-form-item label="批次性质">
-                     <el-radio-group v-model="compForm.form_config.batch_type">
-                         <el-radio label="program">常规训练项目</el-radio>
-                         <el-radio label="competition">学科竞赛活动</el-radio>
-                     </el-radio-group>
-                </el-form-item>
-                <el-form-item label="允许申报类型">
-                     <el-checkbox-group v-model="compForm.form_config.allowed_project_types">
-                         <el-checkbox label="innovation">创新训练</el-checkbox>
-                         <el-checkbox label="entrepreneurship_training">创业训练</el-checkbox>
-                         <el-checkbox label="entrepreneurship_practice">创业实践</el-checkbox>
-                     </el-checkbox-group>
                 </el-form-item>
             </el-form>
             <template #footer>
@@ -2226,36 +2779,323 @@ const Dashboard = {
             selectedPreset: '',
             presetTemplates: [
                 {
-                    label: '大学生创新创业训练计划 (常规)',
-                    value: 'innovation_program',
-                    data: {
-                        title: '202X年大学生创新创业训练计划',
-                        level: 'School',
-                        template_type: 'training',
-                        organizer: '教务处',
-                        form_config: {
-                            batch_type: 'program',
-                            allowed_project_types: ['innovation', 'entrepreneurship_training'],
-                            groups: [
+                    "label": "“挑战杯”全国大学生课外学术科技作品竞赛",
+                    "value": "da_tiao",
+                    "data": {
+                        "title": "“挑战杯”全国大学生课外学术科技作品竞赛",
+                        "system_type": "创新体系",
+                        "competition_level": "A类",
+                        "national_organizer": "共青团中央、中国科协、教育部、中国社会科学院、中国工程院、全国学联、省级人民政府",
+                        "school_organizer": "校团委",
+                        "level": "National",
+                        "template_type": "competition",
+                        "form_config": {
+                            "groups": [
                                 {
-                                    title: '项目基本信息',
-                                    fields: [
-                                        { key: 'title', label: '项目名称', type: 'text', required: true, system: true },
-                                        { key: 'project_type', label: '项目类型', type: 'select', required: true, system: true, options: [] },
-                                        { key: 'extra_info.duration', label: '研究周期', type: 'select', required: true, options: [{label:'1年',value:'1'}, {label:'2年',value:'2'}] },
-                                        { key: 'extra_info.subject', label: '所属学科', type: 'select', required: true, options: [] }, // Dynamic load in real app
-                                        { key: 'abstract', label: '项目简介', type: 'richtext', required: true, system: true },
-                                        { key: 'extra_info.innovation_points', label: '创新点描述', type: 'richtext', required: true },
-                                        { key: 'extra_info.expected_outcomes', label: '预期成果', type: 'checkbox', required: true, options: [{label:'论文',value:'paper'}, {label:'专利',value:'patent'}, {label:'软著',value:'software'}, {label:'实物',value:'product'}, {label:'调研报告',value:'report'}] },
-                                        { key: 'advisor_name', label: '指导教师', type: 'text', required: true, system: true }
+                                    "title": "作品基础信息",
+                                    "fields": [
+                                        {
+                                            "key": "title",
+                                            "label": "作品名称",
+                                            "type": "text",
+                                            "required": true,
+                                            "system": true,
+                                            "placeholder": "不超过20个汉字"
+                                        },
+                                        {
+                                            "key": "extra_info.category",
+                                            "label": "作品类别",
+                                            "type": "radio",
+                                            "required": true,
+                                            "options": [
+                                                { "label": "自然科学类学术论文", "value": "natural_science" },
+                                                { "label": "哲学社会科学类社会调查报告和学术论文", "value": "social_science" },
+                                                { "label": "科技发明制作", "value": "tech_invention" }
+                                            ]
+                                        },
+                                        {
+                                            "key": "extra_info.tech_subcategory",
+                                            "label": "科技发明制作细分",
+                                            "type": "radio",
+                                            "required": true,
+                                            "show_if": { "key": "extra_info.category", "values": ["tech_invention"] },
+                                            "options": [
+                                                { "label": "科技发明制作A类", "value": "a" },
+                                                { "label": "科技发明制作B类", "value": "b" }
+                                            ]
+                                        },
+                                        {
+                                            "key": "extra_info.subject_natural",
+                                            "label": "学科领域（自然）",
+                                            "type": "select",
+                                            "required": true,
+                                            "show_if": { "key": "extra_info.category", "values": ["natural_science", "tech_invention"] },
+                                            "options": [
+                                                { "label": "机械与控制", "value": "mech" },
+                                                { "label": "信息技术", "value": "it" },
+                                                { "label": "数理", "value": "math" },
+                                                { "label": "生命科学", "value": "life" },
+                                                { "label": "能源化工", "value": "energy" }
+                                            ]
+                                        },
+                                        {
+                                            "key": "extra_info.subject_social",
+                                            "label": "学科领域（社科）",
+                                            "type": "select",
+                                            "required": true,
+                                            "show_if": { "key": "extra_info.category", "values": ["social_science"] },
+                                            "options": [
+                                                { "label": "哲学", "value": "philosophy" },
+                                                { "label": "经济", "value": "economics" },
+                                                { "label": "社会", "value": "society" },
+                                                { "label": "法律", "value": "law" },
+                                                { "label": "教育", "value": "education" },
+                                                { "label": "管理", "value": "management" }
+                                            ]
+                                        }
                                     ]
                                 },
                                 {
-                                    title: '团队与经费',
-                                    fields: [
-                                        { key: 'members', label: '团队成员', type: 'table', required: true, system: true },
-                                        { key: 'extra_info.budget', label: '经费预算', type: 'table', required: true },
-                                        { key: 'extra_info.attachments.application_doc', label: '申报书附件', type: 'file', required: true }
+                                    "title": "申报者/团队信息",
+                                    "fields": [
+                                        {
+                                            "key": "extra_info.declaration_type",
+                                            "label": "申报类型",
+                                            "type": "radio",
+                                            "required": true,
+                                            "options": [
+                                                { "label": "个人项目", "value": "individual" },
+                                                { "label": "集体项目", "value": "team" }
+                                            ]
+                                        },
+                                        {
+                                            "key": "leader_name",
+                                            "label": "负责人姓名",
+                                            "type": "text",
+                                            "required": true,
+                                            "system": true
+                                        },
+                                        {
+                                            "key": "extra_info.leader_student_id",
+                                            "label": "负责人学号",
+                                            "type": "text",
+                                            "required": true
+                                        },
+                                        {
+                                            "key": "college",
+                                            "label": "负责人所在学院",
+                                            "type": "select",
+                                            "required": true,
+                                            "system": true
+                                        },
+                                        {
+                                            "key": "extra_info.leader_major_grade",
+                                            "label": "负责人专业年级",
+                                            "type": "text",
+                                            "required": true
+                                        },
+                                        {
+                                            "key": "extra_info.leader_degree",
+                                            "label": "负责人学历",
+                                            "type": "select",
+                                            "required": true,
+                                            "options": [
+                                                { "label": "本科", "value": "undergrad" },
+                                                { "label": "硕士", "value": "master" },
+                                                { "label": "博士", "value": "phd" }
+                                            ]
+                                        },
+                                        {
+                                            "key": "extra_info.leader_phone",
+                                            "label": "联系电话",
+                                            "type": "text",
+                                            "required": true
+                                        },
+                                        {
+                                            "key": "extra_info.leader_email",
+                                            "label": "电子邮箱",
+                                            "type": "text",
+                                            "required": true
+                                        },
+                                        {
+                                            "key": "extra_info.collaborators_individual",
+                                            "label": "合作者信息（≤2人）",
+                                            "type": "table",
+                                            "required": true,
+                                            "show_if": { "key": "extra_info.declaration_type", "values": ["individual"] },
+                                            "columns": [
+                                                { "label": "姓名", "key": "姓名" },
+                                                { "label": "性别", "key": "性别" },
+                                                { "label": "年龄", "key": "年龄" },
+                                                { "label": "学历", "key": "学历" },
+                                                { "label": "所在单位", "key": "所在单位", "width": 160 }
+                                            ],
+                                            "placeholder": "建议填JSON数组：[{\"姓名\":\"\",\"性别\":\"\",\"年龄\":\"\",\"学历\":\"\",\"所在单位\":\"\"}]"
+                                        },
+                                        {
+                                            "key": "extra_info.collaborators_team",
+                                            "label": "合作者信息（≤8-10人）",
+                                            "type": "table",
+                                            "required": true,
+                                            "show_if": { "key": "extra_info.declaration_type", "values": ["team"] },
+                                            "columns": [
+                                                { "label": "姓名", "key": "姓名" },
+                                                { "label": "性别", "key": "性别" },
+                                                { "label": "年龄", "key": "年龄" },
+                                                { "label": "学历", "key": "学历" },
+                                                { "label": "所在单位", "key": "所在单位", "width": 160 }
+                                            ],
+                                            "placeholder": "建议填JSON数组：[{\"姓名\":\"\",\"性别\":\"\",\"年龄\":\"\",\"学历\":\"\",\"所在单位\":\"\"}]"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "title": "指导教师信息",
+                                    "fields": [
+                                        {
+                                            "key": "advisor_name",
+                                            "label": "指导教师姓名",
+                                            "type": "text",
+                                            "required": true,
+                                            "system": true
+                                        },
+                                        {
+                                            "key": "extra_info.advisor_title",
+                                            "label": "指导教师职称",
+                                            "type": "select",
+                                            "required": true,
+                                            "options": [
+                                                { "label": "教授", "value": "professor" },
+                                                { "label": "副教授", "value": "associate_professor" },
+                                                { "label": "研究员", "value": "researcher" },
+                                                { "label": "高级工程师", "value": "senior_engineer" },
+                                                { "label": "其他高级职称", "value": "other_senior" }
+                                            ]
+                                        },
+                                        {
+                                            "key": "extra_info.advisor_unit",
+                                            "label": "所在单位",
+                                            "type": "text",
+                                            "required": true
+                                        },
+                                        {
+                                            "key": "extra_info.advisor_research",
+                                            "label": "研究领域",
+                                            "type": "textarea",
+                                            "required": false
+                                        },
+                                        {
+                                            "key": "extra_info.advisor_phone",
+                                            "label": "联系电话",
+                                            "type": "text",
+                                            "required": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "title": "作品核心内容（自然科学类学术论文）",
+                                    "show_if": { "key": "extra_info.category", "values": ["natural_science"] },
+                                    "fields": [
+                                        { "key": "extra_info.ns_purpose_idea", "label": "作品撰写目的与思路", "type": "richtext", "required": true },
+                                        { "key": "extra_info.ns_scientific_advantage", "label": "科学性与先进性", "type": "richtext", "required": true },
+                                        { "key": "extra_info.ns_application_value", "label": "作品的实际应用价值和现实意义", "type": "richtext", "required": true },
+                                        { "key": "extra_info.ns_abstract", "label": "学术论文文摘", "type": "richtext", "required": true, "placeholder": "200-300字" },
+                                        { "key": "extra_info.ns_keywords", "label": "关键词", "type": "textarea", "required": true, "placeholder": "3-8个" },
+                                        { "key": "extra_info.attachments.ns_full_text", "label": "论文全文", "type": "file", "required": true, "accept": ".pdf,.doc,.docx", "placeholder": "PDF格式，≤8000 字" },
+                                        { "key": "extra_info.ns_references", "label": "参考文献", "type": "table", "required": true, "columns": [ { "label": "序号", "key": "序号", "width": 80 }, { "label": "文献", "key": "文献", "width": 420 } ], "placeholder": "按顺序录入参考文献" },
+                                        { "key": "extra_info.attachments.plagiarism_report", "label": "查重报告", "type": "file", "required": true, "accept": ".pdf", "placeholder": "PDF格式" }
+                                    ]
+                                },
+                                {
+                                    "title": "作品核心内容（哲学社会科学类社会调查报告和学术论文）",
+                                    "show_if": { "key": "extra_info.category", "values": ["social_science"] },
+                                    "fields": [
+                                        { "key": "extra_info.ss_purpose_idea", "label": "作品撰写目的与思路", "type": "richtext", "required": true },
+                                        { "key": "extra_info.ss_scientific_advantage", "label": "科学性与先进性", "type": "richtext", "required": true },
+                                        { "key": "extra_info.ss_application_value", "label": "作品的实际应用价值和现实指导意义", "type": "richtext", "required": true },
+                                        { "key": "extra_info.ss_abstract", "label": "作品摘要", "type": "richtext", "required": true },
+                                        {
+                                            "key": "extra_info.ss_survey_methods",
+                                            "label": "调查方式",
+                                            "type": "checkbox",
+                                            "required": true,
+                                            "options": [
+                                                { "label": "走访", "value": "visit" },
+                                                { "label": "问卷", "value": "questionnaire" },
+                                                { "label": "现场采访", "value": "interview" },
+                                                { "label": "个别交谈", "value": "talk" },
+                                                { "label": "亲临实践", "value": "practice" },
+                                                { "label": "会议", "value": "meeting" },
+                                                { "label": "书报刊物", "value": "publications" },
+                                                { "label": "统计报表", "value": "statistics" },
+                                                { "label": "影视资料", "value": "video" },
+                                                { "label": "文件", "value": "documents" },
+                                                { "label": "集体组织", "value": "organization" },
+                                                { "label": "自发", "value": "spontaneous" },
+                                                { "label": "其它", "value": "other" }
+                                            ]
+                                        },
+                                        { "key": "extra_info.ss_survey_units_count", "label": "主要调查单位及调查数量", "type": "text", "required": true, "placeholder": "省/市/县/乡/村/单位数量、人次" },
+                                        { "key": "extra_info.attachments.ss_full_report", "label": "调查报告全文", "type": "file", "required": true, "accept": ".pdf,.doc,.docx", "placeholder": "PDF格式，≤15000 字" }
+                                    ]
+                                },
+                                {
+                                    "title": "作品核心内容（科技发明制作）",
+                                    "show_if": { "key": "extra_info.category", "values": ["tech_invention"] },
+                                    "fields": [
+                                        { "key": "extra_info.ti_purpose_idea", "label": "作品设计、发明的目的和基本思路", "type": "richtext", "required": true },
+                                        { "key": "extra_info.ti_innovation", "label": "创新点", "type": "richtext", "required": true },
+                                        { "key": "extra_info.ti_key_indicators", "label": "技术关键和主要技术指标", "type": "richtext", "required": true },
+                                        { "key": "extra_info.ti_scientific_advanced", "label": "作品的科学性先进性", "type": "richtext", "required": true },
+                                        {
+                                            "key": "extra_info.ti_stage",
+                                            "label": "作品所处阶段",
+                                            "type": "radio",
+                                            "required": true,
+                                            "options": [
+                                                { "label": "实验室阶段", "value": "lab" },
+                                                { "label": "中试阶段", "value": "pilot" },
+                                                { "label": "生产阶段", "value": "production" }
+                                            ]
+                                        },
+                                        { "key": "extra_info.ti_transfer_method", "label": "技术转让方式", "type": "text", "required": false },
+                                        {
+                                            "key": "extra_info.ti_display_forms",
+                                            "label": "作品可展示的形式",
+                                            "type": "checkbox",
+                                            "required": true,
+                                            "options": [
+                                                { "label": "实物、产品", "value": "product" },
+                                                { "label": "模型", "value": "model" },
+                                                { "label": "图纸", "value": "drawing" },
+                                                { "label": "磁盘", "value": "disk" },
+                                                { "label": "现场演示", "value": "live_demo" },
+                                                { "label": "图片", "value": "images" },
+                                                { "label": "录像", "value": "video" },
+                                                { "label": "样品", "value": "sample" }
+                                            ]
+                                        },
+                                        { "key": "extra_info.ti_instructions", "label": "使用说明及技术特点", "type": "richtext", "required": true },
+                                        {
+                                            "key": "extra_info.ti_patent_status",
+                                            "label": "专利申报情况",
+                                            "type": "radio",
+                                            "required": false,
+                                            "options": [
+                                                { "label": "提出专利申报", "value": "applied" },
+                                                { "label": "已获专利权批准", "value": "granted" },
+                                                { "label": "未提出专利申请", "value": "none" }
+                                            ]
+                                        },
+                                        { "key": "extra_info.ti_patent_number", "label": "专利号/申报号", "type": "text", "required": true, "show_if": { "key": "extra_info.ti_patent_status", "values": ["applied", "granted"] } },
+                                        { "key": "extra_info.attachments.ti_report", "label": "研究报告", "type": "file", "required": true, "accept": ".pdf,.doc,.docx", "placeholder": "字数3000字以上，含图表、数据、原理结构图" }
+                                    ]
+                                },
+                                {
+                                    "title": "附加材料",
+                                    "fields": [
+                                        { "key": "extra_info.recommenders", "label": "推荐者信息", "type": "table", "required": true, "columns": [ { "label": "推荐者姓名", "key": "推荐者姓名" }, { "label": "职称", "key": "职称" }, { "label": "工作单位", "key": "工作单位", "width": 180 }, { "label": "推荐意见", "key": "推荐意见", "width": 260 } ], "placeholder": "须高级职称，且与作品同领域" },
+                                        { "key": "extra_info.attachments.support_materials", "label": "支撑材料", "type": "file", "required": false, "accept": ".pdf,.jpg,.png,.zip,.rar", "placeholder": "图片、数据、原理图、照片、鉴定证书等" }
                                     ]
                                 }
                             ]
@@ -2263,63 +3103,148 @@ const Dashboard = {
                     }
                 },
                 {
-                    label: '创业实践专项项目',
-                    value: 'startup_practice',
-                    data: {
-                        title: '202X年创业实践项目申报',
-                        level: 'School',
-                        template_type: 'training',
-                        organizer: '创新创业学院',
-                        form_config: {
-                            batch_type: 'program',
-                            allowed_project_types: ['entrepreneurship_practice'],
-                            groups: [
+                    "label": "大学生创新创业训练计划·创新训练项目",
+                    "value": "innovation_training",
+                    "data": {
+                        "title": "大学生创新创业训练计划·创新训练项目",
+                        "system_type": "创新体系",
+                        "competition_level": "C类",
+                        "national_organizer": "教育部高等教育司",
+                        "school_organizer": "各学院",
+                        "level": "Provincial",
+                        "template_type": "training",
+                        "form_config": {
+                            "groups": [
                                 {
-                                    title: '项目基本信息',
-                                    fields: [
-                                        { key: 'title', label: '项目名称', type: 'text', required: true, system: true },
-                                        { key: 'project_type', label: '项目类别', type: 'select', required: true, system: true, options: [] },
-                                        { key: 'level', label: '项目级别', type: 'select', required: true, system: true, options: [ {label:'校级',value:'school'}, {label:'省级',value:'provincial'}, {label:'国家级',value:'national'} ] },
-                                        { key: 'college', label: '所在院系', type: 'select', required: true, system: true, options: [] },
-                                        { key: 'year', label: '年份', type: 'text', required: true, system: true },
-                                        { key: 'leader_name', label: '负责人', type: 'text', required: true, system: true, disabled: true },
-                                        { key: 'advisor_name', label: '指导老师', type: 'text', required: true, system: true }
+                                    "title": "项目基础信息",
+                                    "fields": [
+                                        {
+                                            "key": "title",
+                                            "label": "项目名称",
+                                            "type": "text",
+                                            "required": true,
+                                            "system": true
+                                        },
+                                        {
+                                            "key": "project_type",
+                                            "label": "项目类型",
+                                            "type": "select",
+                                            "required": true,
+                                            "system": true,
+                                            "options": [
+                                                {
+                                                    "label": "创新训练",
+                                                    "value": "innovation"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "key": "extra_info.duration",
+                                            "label": "研究周期",
+                                            "type": "select",
+                                            "required": true,
+                                            "options": [
+                                                {
+                                                    "label": "1年",
+                                                    "value": "1"
+                                                },
+                                                {
+                                                    "label": "2年",
+                                                    "value": "2"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "key": "college",
+                                            "label": "所属学院",
+                                            "type": "select",
+                                            "required": true,
+                                            "system": true,
+                                            "options": []
+                                        }
                                     ]
                                 },
                                 {
-                                    title: '企业/实体信息',
-                                    fields: [
-                                        { key: 'extra_info.company_info.name', label: '公司名称', type: 'text', required: true },
-                                        { key: 'extra_info.company_info.code', label: '统一社会信用代码', type: 'text', required: false },
-                                        { key: 'extra_info.company_info.founded_date', label: '注册时间', type: 'date', required: false },
-                                        { key: 'extra_info.company_info.capital', label: '注册资本(万元)', type: 'number', required: false },
-                                        { key: 'extra_info.company_info.equity_structure', label: '股权结构', type: 'textarea', required: true, placeholder: '描述各成员持股比例' },
-                                        { key: 'extra_info.park', label: '入驻园区', type: 'text', required: false },
-                                        { key: 'extra_info.attachments.license', label: '营业执照', type: 'file', required: false }
+                                    "title": "核心内容",
+                                    "fields": [
+                                        {
+                                            "key": "abstract",
+                                            "label": "项目简介",
+                                            "type": "richtext",
+                                            "required": true,
+                                            "system": true
+                                        },
+                                        {
+                                            "key": "extra_info.innovation_points",
+                                            "label": "创新点描述",
+                                            "type": "richtext",
+                                            "required": true
+                                        },
+                                        {
+                                            "key": "extra_info.expected_outcomes",
+                                            "label": "预期成果",
+                                            "type": "checkbox",
+                                            "required": true,
+                                            "options": [
+                                                {
+                                                    "label": "论文",
+                                                    "value": "paper"
+                                                },
+                                                {
+                                                    "label": "专利",
+                                                    "value": "patent"
+                                                },
+                                                {
+                                                    "label": "软著",
+                                                    "value": "software"
+                                                },
+                                                {
+                                                    "label": "实物",
+                                                    "value": "product"
+                                                },
+                                                {
+                                                    "label": "调研报告",
+                                                    "value": "report"
+                                                }
+                                            ]
+                                        }
                                     ]
                                 },
                                 {
-                                    title: '项目进展',
-                                    fields: [
-                                        { key: 'extra_info.stage', label: '当前阶段', type: 'select', required: true, options: [{label:'创意',value:'idea'}, {label:'产品',value:'product'}, {label:'营收',value:'revenue'}, {label:'融资',value:'financing'}] },
-                                        { key: 'extra_info.company_info.investments', label: '融资情况', type: 'table', required: false },
-                                        { key: 'extra_info.total_funding', label: '累计融资金额(万元)', type: 'number', required: false }
+                                    "title": "经费与团队",
+                                    "fields": [
+                                        {
+                                            "key": "extra_info.budget",
+                                            "label": "经费预算",
+                                            "type": "table",
+                                            "required": true
+                                        },
+                                        {
+                                            "key": "advisor_name",
+                                            "label": "指导教师",
+                                            "type": "text",
+                                            "required": true,
+                                            "system": true
+                                        },
+                                        {
+                                            "key": "members",
+                                            "label": "团队成员",
+                                            "type": "table",
+                                            "required": true,
+                                            "system": true
+                                        }
                                     ]
                                 },
                                 {
-                                    title: '商业模式',
-                                    fields: [
-                                        { key: 'extra_info.business_model', label: '商业模式', type: 'richtext', required: true },
-                                        { key: 'extra_info.target_customers', label: '目标客户', type: 'textarea', required: true },
-                                        { key: 'extra_info.competitive_advantage', label: '竞争优势', type: 'textarea', required: true }
-                                    ]
-                                },
-                                {
-                                    title: '附件材料',
-                                    fields: [
-                                        { key: 'extra_info.attachments.business_plan', label: '商业计划书', type: 'file', required: true },
-                                        { key: 'extra_info.attachments.pitch_deck', label: '路演PPT', type: 'file', required: false },
-                                        { key: 'extra_info.attachments.product_demo', label: '产品演示', type: 'file', required: false }
+                                    "title": "附件材料",
+                                    "fields": [
+                                        {
+                                            "key": "extra_info.attachments.application_doc",
+                                            "label": "申报书",
+                                            "type": "file",
+                                            "required": true,
+                                            "placeholder": "PDF格式"
+                                        }
                                     ]
                                 }
                             ]
@@ -2327,39 +3252,211 @@ const Dashboard = {
                     }
                 },
                 {
-                    label: '“互联网+”大学生创新创业大赛',
-                    value: 'internet_plus',
-                    data: {
-                        title: '第九届“互联网+”大学生创新创业大赛校内选拔赛',
-                        level: 'School',
-                        template_type: 'competition',
-                        organizer: '教务处',
-                        form_config: {
-                            batch_type: 'competition',
-                            allowed_project_types: ['innovation', 'entrepreneurship_training', 'entrepreneurship_practice'],
-                            groups: [
+                    "label": "中国国际大学生创新大赛",
+                    "value": "internet_plus",
+                    "data": {
+                        "title": "中国国际大学生创新大赛",
+                        "system_type": "创业体系",
+                        "competition_level": "A类",
+                        "national_organizer": "教育部、中央统战部、中央网信办、国家发展改革委、工业和信息化部、人力资源社会保障部、农业农村部、中国科学院、中国工程院、国家知识产权局、共青团中央、省级人民政府",
+                        "school_organizer": "创新创业学院",
+                        "level": "National",
+                        "template_type": "competition",
+                        "form_config": {
+                            "groups": [
                                 {
-                                    title: '基本信息',
-                                    fields: [
-                                        { key: 'title', label: '项目名称', type: 'text', required: true, system: true },
-                                        { key: 'extra_info.track', label: '参赛赛道', type: 'select', required: true, options: [{label:'高教主赛道',value:'main'}, {label:'红旅赛道',value:'red'}, {label:'产业命题赛道',value:'industry'}] },
-                                        { key: 'extra_info.group', label: '参赛组别', type: 'select', required: true, options: [{label:'本科生创意组',value:'undergrad_idea'}, {label:'研究生创意组',value:'grad_idea'}, {label:'创业组',value:'startup'}, {label:'公益组',value:'charity'}] },
-                                        { key: 'abstract', label: '项目简介', type: 'richtext', required: true, system: true },
-                                        { key: 'extra_info.innovation_points', label: '创新点', type: 'textarea', required: true },
-                                        { key: 'extra_info.pain_points', label: '行业痛点', type: 'textarea', required: true },
-                                        { key: 'extra_info.business_model', label: '商业模式', type: 'richtext', required: true },
-                                        { key: 'extra_info.competitor_analysis', label: '竞品分析', type: 'richtext', required: false },
-                                        { key: 'advisor_name', label: '指导教师', type: 'text', required: true, system: true }
+                                    "title": "项目基础信息",
+                                    "fields": [
+                                        {
+                                            "key": "title",
+                                            "label": "项目名称",
+                                            "type": "text",
+                                            "required": true,
+                                            "system": true
+                                        },
+                                        {
+                                            "key": "extra_info.track",
+                                            "label": "参赛赛道",
+                                            "type": "select",
+                                            "required": true,
+                                            "options": [
+                                                {
+                                                    "label": "高教主赛道",
+                                                    "value": "main"
+                                                },
+                                                {
+                                                    "label": "红旅赛道",
+                                                    "value": "red"
+                                                },
+                                                {
+                                                    "label": "产业命题赛道",
+                                                    "value": "industry"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "key": "extra_info.project_type_4new",
+                                            "label": "项目类型（四新）",
+                                            "type": "select",
+                                            "required": true,
+                                            "options": [
+                                                {
+                                                    "label": "新工科类",
+                                                    "value": "engineering"
+                                                },
+                                                {
+                                                    "label": "新医科类",
+                                                    "value": "medical"
+                                                },
+                                                {
+                                                    "label": "新农科类",
+                                                    "value": "agriculture"
+                                                },
+                                                {
+                                                    "label": "新文科类",
+                                                    "value": "liberal_arts"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "key": "extra_info.group",
+                                            "label": "参赛组别",
+                                            "type": "select",
+                                            "required": true,
+                                            "options": [
+                                                {
+                                                    "label": "本科生创意组",
+                                                    "value": "undergrad_idea"
+                                                },
+                                                {
+                                                    "label": "研究生创意组",
+                                                    "value": "grad_idea"
+                                                },
+                                                {
+                                                    "label": "初创组",
+                                                    "value": "startup"
+                                                },
+                                                {
+                                                    "label": "成长组",
+                                                    "value": "growth"
+                                                },
+                                                {
+                                                    "label": "师生共创组",
+                                                    "value": "teacher_student"
+                                                }
+                                            ]
+                                        }
                                     ]
                                 },
                                 {
-                                    title: '附件与成果',
-                                    fields: [
-                                        { key: 'members', label: '团队成员', type: 'table', required: true, system: true },
-                                        { key: 'extra_info.attachments.business_plan', label: '商业计划书', type: 'file', required: true },
-                                        { key: 'extra_info.attachments.pitch_deck', label: '路演PPT', type: 'file', required: true },
-                                        { key: 'extra_info.attachments.video', label: '1分钟视频', type: 'file', required: false },
-                                        { key: 'extra_info.awards', label: '获奖情况', type: 'table', required: false }
+                                    "title": "核心内容",
+                                    "fields": [
+                                        {
+                                            "key": "abstract",
+                                            "label": "执行概要",
+                                            "type": "richtext",
+                                            "required": true,
+                                            "system": true,
+                                            "placeholder": "300-500字"
+                                        },
+                                        {
+                                            "key": "extra_info.market_pain_points",
+                                            "label": "市场痛点分析",
+                                            "type": "richtext",
+                                            "required": true
+                                        },
+                                        {
+                                            "key": "extra_info.product_solution",
+                                            "label": "产品/解决方案",
+                                            "type": "richtext",
+                                            "required": true
+                                        },
+                                        {
+                                            "key": "extra_info.business_model",
+                                            "label": "商业模式",
+                                            "type": "richtext",
+                                            "required": true
+                                        },
+                                        {
+                                            "key": "extra_info.core_competitiveness",
+                                            "label": "核心竞争力",
+                                            "type": "richtext",
+                                            "required": true
+                                        },
+                                        {
+                                            "key": "extra_info.operation_status",
+                                            "label": "运营现状",
+                                            "type": "richtext",
+                                            "required": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "title": "财务与融资",
+                                    "fields": [
+                                        {
+                                            "key": "extra_info.equity_structure",
+                                            "label": "股本结构",
+                                            "type": "table",
+                                            "required": true
+                                        },
+                                        {
+                                            "key": "extra_info.financing_needs",
+                                            "label": "融资需求",
+                                            "type": "table",
+                                            "required": true
+                                        },
+                                        {
+                                            "key": "extra_info.financial_forecast",
+                                            "label": "财务预测",
+                                            "type": "table",
+                                            "required": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "title": "团队信息",
+                                    "fields": [
+                                        {
+                                            "key": "members",
+                                            "label": "项目成员",
+                                            "type": "table",
+                                            "required": true,
+                                            "system": true
+                                        },
+                                        {
+                                            "key": "advisor_name",
+                                            "label": "指导教师",
+                                            "type": "text",
+                                            "required": true,
+                                            "system": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "title": "附件材料",
+                                    "fields": [
+                                        {
+                                            "key": "extra_info.attachments.business_plan",
+                                            "label": "商业计划书",
+                                            "type": "file",
+                                            "required": true,
+                                            "placeholder": "PDF格式，≤20M"
+                                        },
+                                        {
+                                            "key": "extra_info.attachments.pitch_deck",
+                                            "label": "路演PPT",
+                                            "type": "file",
+                                            "required": true,
+                                            "placeholder": "PPT/PPTX格式"
+                                        },
+                                        {
+                                            "key": "extra_info.attachments.video",
+                                            "label": "1分钟视频",
+                                            "type": "file",
+                                            "required": false,
+                                            "placeholder": "MP4格式（省赛/国赛强制）"
+                                        }
                                     ]
                                 }
                             ]
@@ -2367,39 +3464,711 @@ const Dashboard = {
                     }
                 },
                 {
-                    label: '“挑战杯”大学生课外学术科技作品竞赛',
-                    value: 'challenge_cup',
-                    data: {
-                        title: '第十八届“挑战杯”大学生课外学术科技作品竞赛',
-                        level: 'School',
-                        template_type: 'competition',
-                        organizer: '校团委',
-                        form_config: {
-                            batch_type: 'competition',
-                            allowed_project_types: ['innovation'],
-                            groups: [
+                    "label": "“挑战杯”中国大学生创业计划竞赛",
+                    "value": "xiao_tiao",
+                    "data": {
+                        "title": "“挑战杯”中国大学生创业计划竞赛",
+                        "system_type": "创业体系",
+                        "competition_level": "A类",
+                        "national_organizer": "共青团中央、教育部、人力资源社会保障部、中国科协、全国学联、省级人民政府",
+                        "school_organizer": "校团委（创新创业学院协同）",
+                        "level": "National",
+                        "template_type": "competition",
+                        "form_config": {
+                            "groups": [
                                 {
-                                    title: '基本信息',
-                                    fields: [
-                                        { key: 'title', label: '作品名称', type: 'text', required: true, system: true },
-                                        { key: 'extra_info.work_category', label: '作品类别', type: 'select', required: true, options: [{label:'自然科学类学术论文',value:'science_paper'}, {label:'哲学社会科学类社会调查报告',value:'social_report'}, {label:'科技发明制作',value:'tech_invention'}] },
-                                        { key: 'extra_info.subject', label: '所属学科', type: 'select', required: true, options: [] },
-                                        { key: 'abstract', label: '作品简介', type: 'richtext', required: true, system: true },
-                                        { key: 'extra_info.research_background', label: '研究背景', type: 'richtext', required: true },
-                                        { key: 'extra_info.research_method', label: '研究方法', type: 'textarea', required: true },
-                                        { key: 'extra_info.innovation_points', label: '创新点', type: 'textarea', required: true },
-                                        { key: 'extra_info.application_value', label: '应用价值', type: 'textarea', required: false },
-                                        { key: 'advisor_name', label: '指导教师', type: 'text', required: true, system: true }
+                                    "title": "项目基础信息",
+                                    "fields": [
+                                        {
+                                            "key": "title",
+                                            "label": "项目名称",
+                                            "type": "text",
+                                            "required": true,
+                                            "system": true
+                                        },
+                                        {
+                                            "key": "extra_info.group",
+                                            "label": "参赛组别",
+                                            "type": "select",
+                                            "required": true,
+                                            "options": [
+                                                {
+                                                    "label": "科技创新和未来产业",
+                                                    "value": "tech_innovation"
+                                                },
+                                                {
+                                                    "label": "乡村振兴和农业农村现代化",
+                                                    "value": "rural_revitalization"
+                                                },
+                                                {
+                                                    "label": "社会治理和公共服务",
+                                                    "value": "social_governance"
+                                                },
+                                                {
+                                                    "label": "生态环保和可持续发展",
+                                                    "value": "eco_sustainability"
+                                                },
+                                                {
+                                                    "label": "文化创意和区域合作",
+                                                    "value": "cultural_creative"
+                                                }
+                                            ]
+                                        }
                                     ]
                                 },
                                 {
-                                    title: '附件与成果',
-                                    fields: [
-                                        { key: 'members', label: '团队成员', type: 'table', required: true, system: true },
-                                        { key: 'extra_info.attachments.full_paper', label: '论文/报告全文', type: 'file', required: true },
-                                        { key: 'extra_info.attachments.plagiarism_report', label: '查重报告', type: 'file', required: true },
-                                        { key: 'extra_info.attachments.supporting_materials', label: '支撑材料', type: 'file', required: false },
-                                        { key: 'extra_info.awards', label: '获奖情况', type: 'table', required: false }
+                                    "title": "核心内容",
+                                    "fields": [
+                                        {
+                                            "key": "abstract",
+                                            "label": "执行概要",
+                                            "type": "richtext",
+                                            "required": true,
+                                            "system": true
+                                        },
+                                        {
+                                            "key": "extra_info.market_analysis",
+                                            "label": "市场分析",
+                                            "type": "richtext",
+                                            "required": true
+                                        },
+                                        {
+                                            "key": "extra_info.product_service",
+                                            "label": "产品/服务",
+                                            "type": "richtext",
+                                            "required": true
+                                        },
+                                        {
+                                            "key": "extra_info.business_model",
+                                            "label": "商业模式",
+                                            "type": "richtext",
+                                            "required": true
+                                        },
+                                        {
+                                            "key": "extra_info.financial_analysis",
+                                            "label": "财务分析",
+                                            "type": "richtext",
+                                            "required": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "title": "团队信息",
+                                    "fields": [
+                                        {
+                                            "key": "members",
+                                            "label": "项目成员",
+                                            "type": "table",
+                                            "required": true,
+                                            "system": true
+                                        },
+                                        {
+                                            "key": "advisor_name",
+                                            "label": "指导教师",
+                                            "type": "text",
+                                            "required": true,
+                                            "system": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "title": "附件材料",
+                                    "fields": [
+                                        {
+                                            "key": "extra_info.attachments.business_plan",
+                                            "label": "商业计划书",
+                                            "type": "file",
+                                            "required": true,
+                                            "placeholder": "PDF格式"
+                                        },
+                                        {
+                                            "key": "extra_info.attachments.pitch_deck",
+                                            "label": "路演PPT",
+                                            "type": "file",
+                                            "required": true,
+                                            "placeholder": "PPT/PPTX格式"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "label": "大学生创新创业训练计划·创业训练项目",
+                    "value": "dachuang_entrepreneurship_training",
+                    "data": {
+                        "title": "大学生创新创业训练计划·创业训练项目",
+                        "system_type": "创业体系",
+                        "competition_level": "C类",
+                        "national_organizer": "教育部高等教育司",
+                        "school_organizer": "创新创业学院",
+                        "level": "Provincial",
+                        "template_type": "training",
+                        "form_config": {
+                            "groups": [
+                                {
+                                    "title": "项目基础信息",
+                                    "fields": [
+                                        {
+                                            "key": "title",
+                                            "label": "项目名称",
+                                            "type": "text",
+                                            "required": true,
+                                            "system": true
+                                        },
+                                        {
+                                            "key": "project_type",
+                                            "label": "项目类型",
+                                            "type": "select",
+                                            "required": true,
+                                            "system": true,
+                                            "options": [
+                                                {
+                                                    "label": "创业训练",
+                                                    "value": "entrepreneurship_training"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "key": "extra_info.duration",
+                                            "label": "研究周期",
+                                            "type": "select",
+                                            "required": true,
+                                            "options": [
+                                                {
+                                                    "label": "1年",
+                                                    "value": "1"
+                                                },
+                                                {
+                                                    "label": "2年",
+                                                    "value": "2"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "title": "核心内容",
+                                    "fields": [
+                                        {
+                                            "key": "abstract",
+                                            "label": "项目简介",
+                                            "type": "richtext",
+                                            "required": true,
+                                            "system": true
+                                        },
+                                        {
+                                            "key": "extra_info.business_model",
+                                            "label": "商业模式",
+                                            "type": "richtext",
+                                            "required": true
+                                        },
+                                        {
+                                            "key": "extra_info.expected_outcomes",
+                                            "label": "预期成果",
+                                            "type": "checkbox",
+                                            "required": true,
+                                            "options": [
+                                                {
+                                                    "label": "商业计划书",
+                                                    "value": "business_plan"
+                                                },
+                                                {
+                                                    "label": "公司注册",
+                                                    "value": "company_registration"
+                                                },
+                                                {
+                                                    "label": "融资",
+                                                    "value": "financing"
+                                                },
+                                                {
+                                                    "label": "营收",
+                                                    "value": "revenue"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "title": "财务与团队",
+                                    "fields": [
+                                        {
+                                            "key": "extra_info.budget",
+                                            "label": "经费预算",
+                                            "type": "table",
+                                            "required": true
+                                        },
+                                        {
+                                            "key": "advisor_name",
+                                            "label": "指导教师",
+                                            "type": "text",
+                                            "required": true,
+                                            "system": true
+                                        },
+                                        {
+                                            "key": "members",
+                                            "label": "团队成员",
+                                            "type": "table",
+                                            "required": true,
+                                            "system": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "title": "附件材料",
+                                    "fields": [
+                                        {
+                                            "key": "extra_info.attachments.business_plan",
+                                            "label": "商业计划书",
+                                            "type": "file",
+                                            "required": true,
+                                            "placeholder": "PDF格式"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "label": "大学生创新创业训练计划·创业实践项目",
+                    "value": "dachuang_entrepreneurship_practice",
+                    "data": {
+                        "title": "大学生创新创业训练计划·创业实践项目",
+                        "system_type": "创业体系",
+                        "competition_level": "C类",
+                        "national_organizer": "教育部高等教育司",
+                        "school_organizer": "创新创业学院",
+                        "level": "Provincial",
+                        "template_type": "training",
+                        "form_config": {
+                            "groups": [
+                                {
+                                    "title": "项目基础信息",
+                                    "fields": [
+                                        {
+                                            "key": "title",
+                                            "label": "项目名称",
+                                            "type": "text",
+                                            "required": true,
+                                            "system": true
+                                        },
+                                        {
+                                            "key": "project_type",
+                                            "label": "项目类型",
+                                            "type": "select",
+                                            "required": true,
+                                            "system": true,
+                                            "options": [
+                                                {
+                                                    "label": "创业实践",
+                                                    "value": "entrepreneurship_practice"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "key": "extra_info.duration",
+                                            "label": "研究周期",
+                                            "type": "select",
+                                            "required": true,
+                                            "options": [
+                                                {
+                                                    "label": "1年",
+                                                    "value": "1"
+                                                },
+                                                {
+                                                    "label": "2年",
+                                                    "value": "2"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "title": "核心内容",
+                                    "fields": [
+                                        {
+                                            "key": "abstract",
+                                            "label": "项目简介",
+                                            "type": "richtext",
+                                            "required": true,
+                                            "system": true
+                                        },
+                                        {
+                                            "key": "extra_info.business_model",
+                                            "label": "商业模式",
+                                            "type": "richtext",
+                                            "required": true
+                                        },
+                                        {
+                                            "key": "extra_info.expected_outcomes",
+                                            "label": "预期成果",
+                                            "type": "checkbox",
+                                            "required": true,
+                                            "options": [
+                                                {
+                                                    "label": "商业计划书",
+                                                    "value": "business_plan"
+                                                },
+                                                {
+                                                    "label": "公司注册",
+                                                    "value": "company_registration"
+                                                },
+                                                {
+                                                    "label": "融资",
+                                                    "value": "financing"
+                                                },
+                                                {
+                                                    "label": "营收",
+                                                    "value": "revenue"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "title": "财务与团队",
+                                    "fields": [
+                                        {
+                                            "key": "extra_info.budget",
+                                            "label": "经费预算",
+                                            "type": "table",
+                                            "required": true
+                                        },
+                                        {
+                                            "key": "advisor_name",
+                                            "label": "指导教师",
+                                            "type": "text",
+                                            "required": true,
+                                            "system": true
+                                        },
+                                        {
+                                            "key": "members",
+                                            "label": "团队成员",
+                                            "type": "table",
+                                            "required": true,
+                                            "system": true
+                                        },
+                                        {
+                                            "key": "extra_info.equity_structure",
+                                            "label": "股权结构",
+                                            "type": "table",
+                                            "required": false
+                                        }
+                                    ]
+                                },
+                                {
+                                    "title": "附件材料",
+                                    "fields": [
+                                        {
+                                            "key": "extra_info.attachments.business_plan",
+                                            "label": "商业计划书",
+                                            "type": "file",
+                                            "required": true,
+                                            "placeholder": "PDF格式"
+                                        },
+                                        {
+                                            "key": "extra_info.attachments.business_license",
+                                            "label": "营业执照",
+                                            "type": "file",
+                                            "required": true,
+                                            "placeholder": "PDF/图片格式"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "label": "全国大学生电子商务“创新、创意及创业”挑战赛·常规赛",
+                    "value": "sanchuang_regular",
+                    "data": {
+                        "title": "全国大学生电子商务“创新、创意及创业”挑战赛·常规赛",
+                        "system_type": "三创赛体系",
+                        "competition_level": "A类",
+                        "national_organizer": "全国电子商务产教融合创新联盟、西安交通大学",
+                        "school_organizer": "创新创业学院",
+                        "level": "National",
+                        "template_type": "competition",
+                        "form_config": {
+                            "groups": [
+                                {
+                                    "title": "项目基础信息",
+                                    "fields": [
+                                        {
+                                            "key": "title",
+                                            "label": "项目名称",
+                                            "type": "text",
+                                            "required": true,
+                                            "system": true
+                                        },
+                                        {
+                                            "key": "extra_info.theme",
+                                            "label": "参赛主题",
+                                            "type": "select",
+                                            "required": true,
+                                            "options": [
+                                                {
+                                                    "label": "三农电商",
+                                                    "value": "agriculture"
+                                                },
+                                                {
+                                                    "label": "工业电商",
+                                                    "value": "industry"
+                                                },
+                                                {
+                                                    "label": "跨境电商",
+                                                    "value": "cross_border"
+                                                },
+                                                {
+                                                    "label": "电商物流",
+                                                    "value": "logistics"
+                                                },
+                                                {
+                                                    "label": "互联网金融",
+                                                    "value": "finance"
+                                                },
+                                                {
+                                                    "label": "移动电商",
+                                                    "value": "mobile"
+                                                },
+                                                {
+                                                    "label": "旅游电商",
+                                                    "value": "tourism"
+                                                },
+                                                {
+                                                    "label": "校园电商",
+                                                    "value": "campus"
+                                                },
+                                                {
+                                                    "label": "其他电商",
+                                                    "value": "other"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "title": "核心内容",
+                                    "fields": [
+                                        {
+                                            "key": "extra_info.innovation",
+                                            "label": "项目创新点",
+                                            "type": "richtext",
+                                            "required": true
+                                        },
+                                        {
+                                            "key": "extra_info.creativity",
+                                            "label": "项目创意点",
+                                            "type": "richtext",
+                                            "required": true
+                                        },
+                                        {
+                                            "key": "extra_info.feasibility",
+                                            "label": "项目可行性分析",
+                                            "type": "richtext",
+                                            "required": true
+                                        },
+                                        {
+                                            "key": "extra_info.business_model",
+                                            "label": "商业模式设计",
+                                            "type": "richtext",
+                                            "required": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "title": "团队信息",
+                                    "fields": [
+                                        {
+                                            "key": "members",
+                                            "label": "团队成员",
+                                            "type": "table",
+                                            "required": true,
+                                            "system": true
+                                        },
+                                        {
+                                            "key": "advisor_name",
+                                            "label": "指导教师",
+                                            "type": "text",
+                                            "required": true,
+                                            "system": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "title": "附件材料",
+                                    "fields": [
+                                        {
+                                            "key": "extra_info.attachments.business_plan",
+                                            "label": "商业计划书",
+                                            "type": "file",
+                                            "required": true,
+                                            "placeholder": "PDF格式"
+                                        },
+                                        {
+                                            "key": "extra_info.attachments.pitch_deck",
+                                            "label": "路演PPT",
+                                            "type": "file",
+                                            "required": true,
+                                            "placeholder": "PPT/PPTX格式"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "label": "全国大学生电子商务“创新、创意及创业”挑战赛·实战赛",
+                    "value": "sanchuang_practical",
+                    "data": {
+                        "title": "全国大学生电子商务“创新、创意及创业”挑战赛·实战赛",
+                        "system_type": "三创赛体系",
+                        "competition_level": "A类",
+                        "national_organizer": "全国电子商务产教融合创新联盟、西安交通大学",
+                        "school_organizer": "相关学院",
+                        "level": "National",
+                        "template_type": "competition",
+                        "form_config": {
+                            "groups": [
+                                {
+                                    "title": "项目基础信息",
+                                    "fields": [
+                                        {
+                                            "key": "title",
+                                            "label": "项目名称",
+                                            "type": "text",
+                                            "required": true,
+                                            "system": true
+                                        },
+                                        {
+                                            "key": "extra_info.track",
+                                            "label": "实战赛赛道",
+                                            "type": "select",
+                                            "required": true,
+                                            "options": [
+                                                {
+                                                    "label": "跨境电商",
+                                                    "value": "cross_border"
+                                                },
+                                                {
+                                                    "label": "乡村振兴",
+                                                    "value": "rural_revitalization"
+                                                },
+                                                {
+                                                    "label": "产学用(BUC)",
+                                                    "value": "buc"
+                                                },
+                                                {
+                                                    "label": "大数据",
+                                                    "value": "big_data"
+                                                },
+                                                {
+                                                    "label": "直播电商",
+                                                    "value": "live_streaming"
+                                                },
+                                                {
+                                                    "label": "文旅电商",
+                                                    "value": "tourism"
+                                                },
+                                                {
+                                                    "label": "AI电商",
+                                                    "value": "ai"
+                                                },
+                                                {
+                                                    "label": "大健康电商",
+                                                    "value": "health"
+                                                },
+                                                {
+                                                    "label": "美妆",
+                                                    "value": "beauty"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "title": "核心内容",
+                                    "fields": [
+                                        {
+                                            "key": "abstract",
+                                            "label": "项目简介",
+                                            "type": "richtext",
+                                            "required": true,
+                                            "system": true
+                                        },
+                                        {
+                                            "key": "extra_info.operation_strategy",
+                                            "label": "运营策略",
+                                            "type": "richtext",
+                                            "required": true
+                                        },
+                                        {
+                                            "key": "extra_info.channels",
+                                            "label": "运营平台/渠道",
+                                            "type": "textarea",
+                                            "required": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "title": "团队信息",
+                                    "fields": [
+                                        {
+                                            "key": "members",
+                                            "label": "团队成员",
+                                            "type": "table",
+                                            "required": true,
+                                            "system": true
+                                        },
+                                        {
+                                            "key": "advisor_name",
+                                            "label": "指导教师",
+                                            "type": "text",
+                                            "required": true,
+                                            "system": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "title": "运营数据",
+                                    "fields": [
+                                        {
+                                            "key": "extra_info.attachments.operation_data",
+                                            "label": "运营数据证明",
+                                            "type": "file",
+                                            "required": true,
+                                            "placeholder": "销售额截图、后台数据等"
+                                        },
+                                        {
+                                            "key": "extra_info.attachments.live_record",
+                                            "label": "直播/运营记录",
+                                            "type": "file",
+                                            "required": false,
+                                            "placeholder": "视频、截图"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "title": "附件材料",
+                                    "fields": [
+                                        {
+                                            "key": "extra_info.attachments.consent_form",
+                                            "label": "实战赛知情书",
+                                            "type": "file",
+                                            "required": true,
+                                            "placeholder": "需签字"
+                                        },
+                                        {
+                                            "key": "extra_info.attachments.business_plan",
+                                            "label": "商业计划书",
+                                            "type": "file",
+                                            "required": false,
+                                            "placeholder": "PDF格式"
+                                        }
                                     ]
                                 }
                             ]
@@ -2409,14 +4178,10 @@ const Dashboard = {
             ],
             compForm: { 
                 title: '', level: 'School', organizer: '', registration_start: '', registration_end: '', status: 'active', 
+                system_type: '', competition_level: '', national_organizer: '', school_organizer: '',
                 template_type: 'training',
                 form_config: {
-                    show_company_info: false,
-                    show_advisor: true,
-                    show_team_members: false,
-                    show_attachments: true,
-                    batch_type: 'program',
-                    allowed_project_types: ['innovation', 'entrepreneurship_training', 'entrepreneurship_practice']
+                    groups: []
                 }
             },
             isEditingComp: false,
@@ -2434,7 +4199,7 @@ const Dashboard = {
             // Create Project
             showCreateDialog: false,
             activeStep: 0,
-            createForm: { title: '', project_type: 'innovation', members: [] },
+            createForm: { title: '', project_type: 'innovation', members: [], linked_project_id: null },
             isEditing: false,
             currentEditingId: null,
             
@@ -2442,12 +4207,36 @@ const Dashboard = {
             showDetailDialog: false,
             detailActiveTab: 'basic',
             currentProject: null,
+            upgradeRequests: [],
+            upgradeRequestsLoading: false,
+            showUpgradeDialog: false,
+            upgradeForm: { project_id: null, to_level: 'provincial', reason: '' },
+            adminReviewSaving: false,
+            adminReviewForm: {
+                review_stage: '',
+                college_review_result: 'pending',
+                school_review_result: 'pending',
+                provincial_award_level: 'none',
+                national_award_level: 'none',
+                research_admin_opinion: '',
+                department_head_opinion: ''
+            },
+            projectAwards: [],
+            projectAwardsLoading: false,
+            showAwardDialog: false,
+            awardForm: { id: null, project_id: null, stage: 'provincial', award_level: 'none', award_name: '', award_time: '', issuer: '' },
+            awardsRecords: [],
+            awardsRecordsLoading: false,
             isAuditing: false,
             auditAction: '',
             auditFeedback: '',
             auditLevel: '', // New
             auditGrade: '', // New
             fileAuditFeedback: '',
+
+            showLinkDachuangDialog: false,
+            dachuangCandidates: [],
+            dachuangLinkSelected: null,
             
             // Create User
             showCreateUserDialog: false,
@@ -2457,14 +4246,10 @@ const Dashboard = {
             showEditUserDialog: false,
             editUserForm: {},
             
-            colleges: [
-                "文学与新闻传播学院", "外语学院", "音乐舞蹈学院", "体育学院", "美术学院", 
-                "法学院", "民族学与社会学学院", "马克思主义学院", "中华民族共同体学院", 
-                "经济学院", "教育学院", "管理学院", "国家安全学院", "化学与材料科学学院", 
-                "生命科学学院", "资源与环境学院", "药学院", "数学与统计学学院", 
-                "电子信息工程学院（机器人学院）", "计算机学院（人工智能学院）", 
-                "生物医学工程学院", "预科教育学院"
-            ],
+            colleges: CNMU_COLLEGES.slice(),
+            departments: [],
+            permissionMode: 'mixed',
+            permissionModeDraft: 'mixed',
             degrees: ['大学专科', '大学本科', '硕士研究生', '博士研究生'],
 
             // Review
@@ -2499,10 +4284,32 @@ const Dashboard = {
     },
     computed: {
         canManageUsers() {
-            return this.user?.role && ['system_admin', 'project_admin'].includes(this.user.role);
+            const role = this.user?.role;
+            if (!role) return false;
+            if (this.permissionMode === 'strict') return role === 'system_admin';
+            return ['system_admin', 'project_admin', 'college_approver'].includes(role);
         },
         canManageSystem() {
+            return this.user?.role && ['system_admin'].includes(this.user.role);
+        },
+        canManageCompetitions() {
             return this.user?.role && ['system_admin', 'project_admin'].includes(this.user.role);
+        },
+        canManageAwards() {
+            return this.user?.role && ['system_admin', 'project_admin', 'school_approver'].includes(this.user.role);
+        },
+        createDialogTitle() {
+            const override = this.createForm?.form_config?.dialog_title;
+            if (override) return override;
+
+            const compId = this.createForm?.competition_id;
+            const comp = compId ? (this.competitions || []).find(c => String(c.id) === String(compId)) : null;
+            const baseTitle = (comp && comp.title) ? comp.title : ((this.createForm?.title || '').split(' - ')[0] || '');
+
+            if (!baseTitle) return '项目申报';
+            if (baseTitle.includes('挑战杯') && baseTitle.includes('课外学术科技作品竞赛')) return '挑战杯大挑项目申报';
+            if (baseTitle.includes('挑战杯') && baseTitle.includes('创业计划')) return '挑战杯小挑项目申报';
+            return `${baseTitle}项目申报`;
         },
         filteredProjects() {
             console.log('DEBUG: filtering projects. Total raw:', this.projects.length);
@@ -2603,6 +4410,9 @@ const Dashboard = {
         this.fetchProjects();
         this.fetchAnnouncements(); // 获取公告
         this.fetchCompetitions(); // 获取赛事
+
+        await this.fetchPermissionMode();
+        await this.fetchDepartments();
         
         // Fetch notifications and show alert if unread
         await this.fetchNotifications();
@@ -2641,6 +4451,14 @@ const Dashboard = {
         }
     },
     watch: {
+        user: {
+            handler(val) {
+                if (val) {
+                    this.profileForm = { ...val };
+                }
+            },
+            immediate: true
+        },
         'createForm.id': function(newVal, oldVal) {
              console.log(`DEBUG: createForm.id changed from ${oldVal} to ${newVal}`);
              if ([6, 7, 8, 9].includes(Number(newVal))) {
@@ -2650,7 +4468,7 @@ const Dashboard = {
         'showCreateDialog': function(val) {
             if (!val) {
                 console.log('DEBUG: showCreateDialog closed. Resetting createForm to prevent state leakage.');
-                this.createForm = { id: undefined, title: '', project_type: 'innovation', members: [] };
+                this.createForm = { id: undefined, title: '', project_type: 'innovation', members: [], linked_project_id: null }; 
                 this.isEditing = false;
                 this.currentEditingId = null;
                 this.activeStep = 0;
@@ -2737,6 +4555,8 @@ const Dashboard = {
                 this.fetchStats();
             } else if (val === 'competitions' || val === 'comp_mgmt') {
                 this.fetchCompetitions();
+            } else if (val === 'award_mgmt' && this.canManageAwards) {
+                this.fetchAwards();
             } else if (val === 'pending' && this.canManageUsers) {
                 this.fetchPendingUsers();
             } else if (val === 'profile') {
@@ -2745,26 +4565,59 @@ const Dashboard = {
         },
         searchQuery(val) {
              // trigger re-render of computed
+        },
+        'createUserForm.role'(val) {
+            const mem = this.loadIdentityMemory(val);
+            if (this.createUserForm && !this.createUserForm.identity_number && mem) {
+                this.createUserForm.identity_number = mem;
+            }
+            if (this.user?.role === 'college_approver') {
+                this.createUserForm.college = this.user?.college || '';
+            }
+        },
+        'editUserForm.role'(val) {
+            const mem = this.loadIdentityMemory(val);
+            if (this.editUserForm && !this.editUserForm.identity_number && mem) {
+                this.editUserForm.identity_number = mem;
+            }
         }
     },
     methods: {
         // --- Profile Management ---
-        initProfile() {
-            if (this.user) {
-                this.profileForm = { ...this.user };
-                // 确保 passwordForm 被重置
-                this.passwordForm = { old_password: '', new_password: '', confirm_password: '' };
+        async initProfile() {
+            try {
+                const fresh = await axios.get('/api/me');
+                this.profileForm = { ...fresh.data };
+                this.$emit('login-success', fresh.data);
+            } catch (e) {
+                if (this.user) {
+                    this.profileForm = { ...this.user };
+                }
             }
+            if (!this.profileForm.identity_number) {
+                const mem = this.loadIdentityMemory(this.profileForm.role);
+                if (mem) this.profileForm.identity_number = mem;
+            }
+            this.passwordForm = { old_password: '', new_password: '', confirm_password: '' };
         },
         async updateProfile() {
             this.savingProfile = true;
             try {
-                await axios.put('/api/me', this.profileForm);
+                const keys = ['real_name', 'college', 'department', 'personal_info', 'email', 'phone', 'identity_number', 'teaching_office', 'research_area'];
+                const payload = {};
+                keys.forEach(k => {
+                    const nv = this.profileForm?.[k];
+                    const ov = this.user?.[k];
+                    if (nv === '' && (ov !== '' && ov !== null && ov !== undefined)) return;
+                    if (nv !== ov) payload[k] = nv;
+                });
+                await axios.put('/api/me', payload);
                 ElementPlus.ElMessage.success('个人信息更新成功');
-                // 更新本地 user 对象
-                this.$emit('login-success', { ...this.user, ...this.profileForm });
+                const fresh = await axios.get('/api/me');
+                this.$emit('login-success', fresh.data);
+                this.profileForm = { ...fresh.data };
             } catch (e) {
-                ElementPlus.ElMessage.error(e.response?.data?.error || '更新失败');
+                ElementPlus.ElMessage.error(e.message || '更新失败');
             } finally {
                 this.savingProfile = false;
             }
@@ -2876,6 +4729,54 @@ const Dashboard = {
                 const res = await axios.get('/api/announcements');
                 this.announcements = res.data;
             } catch(e) { console.error(e); }
+        },
+        async fetchPermissionMode() {
+            try {
+                const res = await axios.get('/api/permission-mode');
+                const mode = res.data?.mode;
+                this.permissionMode = mode === 'strict' ? 'strict' : 'mixed';
+                this.permissionModeDraft = this.permissionMode;
+            } catch (e) {
+                this.permissionMode = 'mixed';
+                this.permissionModeDraft = 'mixed';
+            }
+        },
+        async fetchDepartments() {
+            const majors = [];
+            for (const k of Object.keys(CNMU_COLLEGE_MAJOR)) {
+                const arr = CNMU_COLLEGE_MAJOR[k];
+                if (Array.isArray(arr)) {
+                    for (const m of arr) {
+                        if (m) majors.push(m);
+                    }
+                }
+            }
+            this.departments = Array.from(new Set(majors)).sort();
+        },
+        async confirmPermissionModeChange() {
+            const newMode = this.permissionModeDraft;
+            const oldMode = this.permissionMode;
+            if (newMode === oldMode) return;
+
+            const newLabel = newMode === 'strict' ? '严格模式' : '混合模式';
+            const oldLabel = oldMode === 'strict' ? '严格模式' : '混合模式';
+            const impact = newMode === 'strict'
+                ? '切换为严格模式后，学校管理员/学院管理员将失去用户管理权限（增删改查/审核等），仅系统管理员保留。'
+                : '切换为混合模式后，学校管理员可管理全校用户，学院管理员可管理本院用户。';
+
+            try {
+                await ElementPlus.ElMessageBox.confirm(
+                    `确认从【${oldLabel}】切换到【${newLabel}】？\n\n${impact}`,
+                    '确认切换权限模式',
+                    { type: 'warning', confirmButtonText: '确认切换', cancelButtonText: '取消' }
+                );
+
+                await axios.post('/api/settings', { permission_mode: newMode });
+                await this.fetchPermissionMode();
+                ElementPlus.ElMessage.success('权限模式已更新并立即生效');
+            } catch (e) {
+                this.permissionModeDraft = this.permissionMode;
+            }
         },
         async fetchStats() {
             this.loadingStats = true;
@@ -3387,7 +5288,110 @@ const Dashboard = {
 
         getFieldValue(form, key) {
             // Helper to get value from nested object using dot notation
-            return key.split('.').reduce((obj, i) => obj ? obj[i] : null, form);
+            const v = key.split('.').reduce((obj, i) => obj ? obj[i] : undefined, form);
+            return (v === undefined || v === null) ? '' : v;
+        },
+        shouldShow(form, item) {
+            const rule = item && item.show_if;
+            if (!rule) return true;
+            const v = this.getFieldValue(form, rule.key);
+            const values = Array.isArray(rule.values) ? rule.values : [];
+            return values.includes(v);
+        },
+        getTableRows(form, key) {
+            const v = this.getFieldValue(form, key);
+            if (Array.isArray(v)) return v;
+            if (typeof v === 'string') {
+                const s = v.trim();
+                if (!s) return [];
+                try {
+                    const parsed = JSON.parse(s);
+                    return Array.isArray(parsed) ? parsed : [];
+                } catch (e) {
+                    return [];
+                }
+            }
+            return [];
+        },
+        addTableRow(form, key, columns) {
+            const rows = this.getTableRows(form, key);
+            const row = {};
+            (columns || []).forEach(c => { row[c.key] = ''; });
+            rows.push(row);
+            this.setFieldValue(form, key, rows);
+        },
+        removeTableRow(form, key, index) {
+            const rows = this.getTableRows(form, key);
+            rows.splice(index, 1);
+            this.setFieldValue(form, key, rows);
+        },
+        updateTableCell(form, key, rowIndex, colKey, value) {
+            const rows = this.getTableRows(form, key);
+            if (!rows[rowIndex] || typeof rows[rowIndex] !== 'object') rows[rowIndex] = {};
+            rows[rowIndex][colKey] = value;
+            this.setFieldValue(form, key, rows);
+        },
+        setFieldValue(form, key, value) {
+            const parts = String(key).split('.');
+            if (!parts.length) return;
+            let obj = form;
+            for (let i = 0; i < parts.length - 1; i++) {
+                const p = parts[i];
+                if (!obj[p] || typeof obj[p] !== 'object') {
+                    obj[p] = {};
+                }
+                obj = obj[p];
+            }
+            obj[parts[parts.length - 1]] = value;
+        },
+        getMajorsByCollege(college) {
+            const c = (college || '').trim();
+            if (!c) {
+                const extra = ['校级管理'];
+                return Array.from(new Set([...(this.departments || []), ...extra]));
+            }
+            const arr = CNMU_COLLEGE_MAJOR[c];
+            return Array.isArray(arr) ? arr : [];
+        },
+        isOrgRole(role) {
+            return ['system_admin', 'school_approver', 'project_admin'].includes(role);
+        },
+        getField1Label(role) {
+            return this.isOrgRole(role) ? '所属部门' : '所属学院';
+        },
+        getField1Options(role) {
+            return this.isOrgRole(role) ? ORG_DEPARTMENTS : CNMU_COLLEGES;
+        },
+        getIdentityLabel(role) {
+            return role === 'student' ? '学号' : '工号';
+        },
+        getField2Label(role) {
+            if (role === 'student') return '专业';
+            if (role === 'teacher') return '职称';
+            if (role === 'judge') return '职称';
+            if (role === 'college_approver') return '职务';
+            if (role === 'school_approver') return '职务';
+            if (role === 'project_admin') return '职务';
+            if (role === 'system_admin') return '职务';
+            return '部门/专业';
+        },
+        getField2Options(role, field1Value) {
+            if (role === 'student') return this.getMajorsByCollege(field1Value);
+            const arr = ROLE_FIELD2_OPTIONS[role];
+            return Array.isArray(arr) ? arr : [];
+        },
+        rememberIdentity(role, value) {
+            try {
+                const k = `id_mem_${role || 'unknown'}`;
+                if (value === undefined || value === null) return;
+                localStorage.setItem(k, String(value));
+            } catch (e) {}
+        },
+        loadIdentityMemory(role) {
+            try {
+                const k = `id_mem_${role || 'unknown'}`;
+                return localStorage.getItem(k) || '';
+            } catch (e) { return ''; }
         },
         openCreateDialog() {
             console.log('DEBUG: openCreateDialog called');
@@ -3408,6 +5412,7 @@ const Dashboard = {
                 title: '', project_type: 'innovation', level: 'school', year: '2025',
                 leader_name: this.user?.real_name || '', advisor_name: '', 
                 inspiration_source: '', // Initialize inspiration source
+                linked_project_id: null,
                 members: [],
                 template_type: 'default',
                 extra_info: {
@@ -3440,6 +5445,275 @@ const Dashboard = {
             this.createForm.members.splice(index, 1);
         },
         nextStep() { this.activeStep++; },
+
+        getProjectLevelText(level) {
+            const s = String(level || '').trim().toLowerCase();
+            if (s === 'school' || s === '校级') return '校级';
+            if (s === 'provincial' || s === '省级') return '省级';
+            if (s === 'national' || s === '国家级') return '国家级';
+            return level || '';
+        },
+        hasPendingUpgradeRequest() {
+            return Array.isArray(this.upgradeRequests) && this.upgradeRequests.some(r => r && r.status === 'pending');
+        },
+        canApplyUpgrade(project) {
+            if (!project) return false;
+            if (this.hasPendingUpgradeRequest()) return false;
+            const s = String(project.status || '');
+            if (!['school_approved', 'rated', 'midterm_submitted', 'midterm_approved', 'conclusion_submitted', 'finished'].includes(s)) {
+                return false;
+            }
+            const lv = String(project.level || '').trim().toLowerCase();
+            return lv === 'school' || lv === 'provincial' || lv === '校级' || lv === '省级';
+        },
+        canReviewUpgradeRequests() {
+            return ['system_admin', 'project_admin', 'school_approver', 'judge'].includes(this.user?.role);
+        },
+        openUpgradeDialog(project) {
+            const cur = String(project.level || '').trim().toLowerCase();
+            const defaultTo = (cur === 'provincial' || cur === '省级') ? 'national' : 'provincial';
+            this.upgradeForm = { project_id: project.id, to_level: defaultTo, reason: '' };
+            this.showUpgradeDialog = true;
+        },
+        async loadUpgradeRequests(projectId) {
+            this.upgradeRequestsLoading = true;
+            try {
+                const res = await axios.get(`/api/projects/${projectId}/upgrade-requests`);
+                this.upgradeRequests = Array.isArray(res.data) ? res.data : [];
+            } catch (e) {
+                this.upgradeRequests = [];
+            } finally {
+                this.upgradeRequestsLoading = false;
+            }
+        },
+        async submitUpgradeRequest() {
+            if (!this.upgradeForm?.project_id) return;
+            try {
+                await axios.post(`/api/projects/${this.upgradeForm.project_id}/upgrade-requests`, {
+                    to_level: this.upgradeForm.to_level,
+                    reason: this.upgradeForm.reason
+                });
+                ElementPlus.ElMessage.success('升级申请已提交');
+                this.showUpgradeDialog = false;
+                await this.loadUpgradeRequests(this.upgradeForm.project_id);
+                await this.viewDetails(this.upgradeForm.project_id);
+            } catch (e) {
+                ElementPlus.ElMessage.error(e.message || '提交失败');
+            }
+        },
+        async reviewUpgradeRequest(id, status) {
+            const isReject = status === 'rejected';
+            try {
+                const { value } = await ElementPlus.ElMessageBox.prompt(
+                    isReject ? '请输入驳回原因（必填）' : '请输入审核意见（可选）',
+                    isReject ? '驳回升级申请' : '通过升级申请',
+                    {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        inputPlaceholder: isReject ? '驳回原因' : '审核意见',
+                        inputValidator: (v) => {
+                            if (isReject && !String(v || '').trim()) return '驳回原因不能为空';
+                            return true;
+                        }
+                    }
+                );
+                await axios.put(`/api/upgrade-requests/${id}/review`, { status, comment: value });
+                ElementPlus.ElMessage.success('处理成功');
+                if (this.currentProject?.id) {
+                    await this.loadUpgradeRequests(this.currentProject.id);
+                    await this.viewDetails(this.currentProject.id);
+                }
+            } catch (e) {
+                if (e !== 'cancel') ElementPlus.ElMessage.error(e.message || '处理失败');
+            }
+        },
+
+        getReviewStageText(v) {
+            const s = String(v || '').trim().toLowerCase();
+            if (s === 'school' || s === '校赛') return '校赛';
+            if (s === 'provincial' || s === '省赛') return '省赛';
+            if (s === 'national' || s === '国赛') return '国赛';
+            return v || '';
+        },
+        getReviewResultText(v) {
+            const s = String(v || '').trim().toLowerCase();
+            if (s === 'approved' || s === '通过') return '通过';
+            if (s === 'rejected' || s === '不通过') return '不通过';
+            if (s === 'pending' || s === '待评审') return '待评审';
+            return v || '';
+        },
+        getAwardLevelText(v) {
+            const s = String(v || '').trim().toLowerCase();
+            if (s === 'special' || s === '特等') return '特等';
+            if (s === 'first' || s === '一等') return '一等';
+            if (s === 'second' || s === '二等') return '二等';
+            if (s === 'third' || s === '三等') return '三等';
+            if (s === 'excellent' || s === '优秀奖') return '优秀奖';
+            if (s === 'none' || s === '无') return '无';
+            return v || '';
+        },
+        canViewAdminReview() {
+            return ['system_admin', 'project_admin', 'college_approver', 'school_approver', 'judge'].includes(this.user?.role);
+        },
+        canEditAdminField(field) {
+            const role = this.user?.role;
+            if (!role) return false;
+            if (['system_admin', 'project_admin'].includes(role)) return true;
+            if (role === 'college_approver') return ['college_review_result', 'department_head_opinion'].includes(field);
+            if (role === 'school_approver') return ['review_stage', 'school_review_result', 'provincial_award_level', 'national_award_level', 'research_admin_opinion'].includes(field);
+            if (role === 'judge') return ['review_stage', 'college_review_result', 'school_review_result', 'research_admin_opinion', 'department_head_opinion'].includes(field);
+            return false;
+        },
+        initAdminReviewFormFromProject(p) {
+            this.adminReviewForm = {
+                review_stage: p?.review_stage || '',
+                college_review_result: p?.college_review_result || 'pending',
+                school_review_result: p?.school_review_result || 'pending',
+                provincial_award_level: p?.provincial_award_level || 'none',
+                national_award_level: p?.national_award_level || 'none',
+                research_admin_opinion: p?.research_admin_opinion || '',
+                department_head_opinion: p?.department_head_opinion || ''
+            };
+        },
+        async saveAdminReview() {
+            if (!this.currentProject?.id) return;
+            this.adminReviewSaving = true;
+            try {
+                await axios.put(`/api/projects/${this.currentProject.id}/admin-review`, { ...this.adminReviewForm });
+                ElementPlus.ElMessage.success('保存成功');
+                await this.viewDetails(this.currentProject.id);
+            } catch (e) {
+                ElementPlus.ElMessage.error(e.message || '保存失败');
+            } finally {
+                this.adminReviewSaving = false;
+            }
+        },
+        async loadProjectAwards(projectId) {
+            this.projectAwardsLoading = true;
+            try {
+                const res = await axios.get(`/api/projects/${projectId}/awards`);
+                this.projectAwards = Array.isArray(res.data) ? res.data : [];
+            } catch (e) {
+                this.projectAwards = [];
+            } finally {
+                this.projectAwardsLoading = false;
+            }
+        },
+        async fetchAwards() {
+            this.awardsRecordsLoading = true;
+            try {
+                const res = await axios.get('/api/awards');
+                this.awardsRecords = Array.isArray(res.data) ? res.data : [];
+            } catch (e) {
+                this.awardsRecords = [];
+            } finally {
+                this.awardsRecordsLoading = false;
+            }
+        },
+        openAwardDialog(row) {
+            if (row && row.id) {
+                this.awardForm = {
+                    id: row.id,
+                    project_id: row.project_id,
+                    stage: row.stage || 'provincial',
+                    award_level: row.award_level || 'none',
+                    award_name: row.award_name || '',
+                    award_time: row.award_time || '',
+                    issuer: row.issuer || ''
+                };
+            } else {
+                this.awardForm = { id: null, project_id: this.currentProject?.id || null, stage: 'provincial', award_level: 'none', award_name: '', award_time: '', issuer: '' };
+            }
+            this.showAwardDialog = true;
+        },
+        async submitAward() {
+            if (!this.awardForm?.project_id) {
+                ElementPlus.ElMessage.warning('请选择项目');
+                return;
+            }
+            try {
+                if (this.awardForm.id) {
+                    await axios.put(`/api/awards/${this.awardForm.id}`, { ...this.awardForm });
+                } else {
+                    await axios.post(`/api/projects/${this.awardForm.project_id}/awards`, { ...this.awardForm });
+                }
+                ElementPlus.ElMessage.success('保存成功');
+                this.showAwardDialog = false;
+                if (this.currentProject?.id) {
+                    await this.loadProjectAwards(this.currentProject.id);
+                }
+                if (this.canManageAwards && this.activeTab === 'award_mgmt') {
+                    await this.fetchAwards();
+                }
+            } catch (e) {
+                ElementPlus.ElMessage.error(e.message || '保存失败');
+            }
+        },
+        async deleteAward(id) {
+            try {
+                await ElementPlus.ElMessageBox.confirm('确认删除该获奖记录？', '提示', { type: 'warning' });
+                await axios.delete(`/api/awards/${id}`);
+                ElementPlus.ElMessage.success('已删除');
+                if (this.currentProject?.id) {
+                    await this.loadProjectAwards(this.currentProject.id);
+                }
+                if (this.canManageAwards && this.activeTab === 'award_mgmt') {
+                    await this.fetchAwards();
+                }
+            } catch (e) {}
+        },
+
+        async maybePromptLinkDachuang(comp) {
+            if (this.user?.role !== 'student') return;
+            const title = String(comp?.title || '');
+            if (!title.includes('中国国际大学生创新大赛')) return;
+            try {
+                const res = await axios.get('/api/my/dachuang-projects');
+                const list = Array.isArray(res.data) ? res.data : [];
+                if (!list.length) return;
+                this.dachuangCandidates = list;
+                this.dachuangLinkSelected = list[0]?.id || null;
+                this.showLinkDachuangDialog = true;
+            } catch (e) {}
+        },
+        skipLinkDachuang() {
+            this.showLinkDachuangDialog = false;
+            this.dachuangCandidates = [];
+            this.dachuangLinkSelected = null;
+        },
+        async confirmLinkDachuang() {
+            const id = this.dachuangLinkSelected;
+            if (!id) {
+                ElementPlus.ElMessage.warning('请选择一个大创项目');
+                return;
+            }
+            this.createForm.linked_project_id = id;
+            this.showLinkDachuangDialog = false;
+            try {
+                const res = await axios.get(`/api/projects/${id}`);
+                const p = res.data || {};
+                const src = p.extra_info || {};
+                if (!this.createForm.extra_info) this.createForm.extra_info = {};
+                if (!this.createForm.extra_info.attachments) this.createForm.extra_info.attachments = {};
+                if (this.createForm.extra_info.expected_outcomes == null && src.expected_outcomes != null) {
+                    this.createForm.extra_info.expected_outcomes = src.expected_outcomes;
+                }
+                if (this.createForm.extra_info.innovation_points == null && src.innovation_points != null) {
+                    this.createForm.extra_info.innovation_points = src.innovation_points;
+                }
+                if (src.attachments && typeof src.attachments === 'object') {
+                    for (const k of Object.keys(src.attachments)) {
+                        if (this.createForm.extra_info.attachments[k] == null) {
+                            this.createForm.extra_info.attachments[k] = src.attachments[k];
+                        }
+                    }
+                }
+                this.createForm.extra_info.reused_from_project_id = id;
+                ElementPlus.ElMessage.success('已关联并复用成果数据');
+            } catch (e) {
+                ElementPlus.ElMessage.success('已关联大创项目');
+            }
+        },
         
         async submitProject() {
             if (this.submitting) return; // Prevent double submission
@@ -3604,7 +5878,7 @@ const Dashboard = {
                 this.fetchProjects();
                 this.fetchCompetitions(); // 刷新赛事状态
                 // Explicitly reset createForm to avoid state leakage
-                this.createForm = { id: undefined, title: '', project_type: 'innovation', members: [] }; 
+                this.createForm = { id: undefined, title: '', project_type: 'innovation', members: [], linked_project_id: null }; 
                 this.isEditing = false;
             } catch (error) {
                 if (error.response && error.response.status === 404) {
@@ -3656,42 +5930,26 @@ const Dashboard = {
                 // Ensure form_config exists
                 if (!this.compForm.form_config) {
                     this.compForm.form_config = {
-                        show_company_info: false,
-                        show_advisor: true,
-                        show_team_members: false,
-                        show_attachments: true,
-                        batch_type: 'program',
-                        allowed_project_types: ['innovation', 'entrepreneurship_training', 'entrepreneurship_practice']
+                        groups: []
                     };
                 } else if (typeof this.compForm.form_config === 'string') {
                     try {
                         this.compForm.form_config = JSON.parse(this.compForm.form_config);
                     } catch(e) {
                         this.compForm.form_config = {
-                            show_company_info: false,
-                            show_advisor: true,
-                            show_team_members: false,
-                            show_attachments: true,
-                            batch_type: 'program',
-                            allowed_project_types: ['innovation', 'entrepreneurship_training', 'entrepreneurship_practice']
+                            groups: []
                         };
                     }
                 }
                 // Ensure new fields exist for legacy data
-                if (!this.compForm.form_config.batch_type) this.compForm.form_config.batch_type = 'program';
-                if (!this.compForm.form_config.allowed_project_types) this.compForm.form_config.allowed_project_types = ['innovation', 'entrepreneurship_training', 'entrepreneurship_practice'];
             } else {
                 this.isEditingComp = false;
                 this.compForm = { 
                     title: '', level: 'School', organizer: '', registration_start: '', registration_end: '', status: 'active', 
+                    system_type: '', competition_level: '', national_organizer: '', school_organizer: '',
                     template_type: 'default',
                     form_config: {
-                        show_company_info: false,
-                        show_advisor: true,
-                        show_team_members: false,
-                        show_attachments: true,
-                        batch_type: 'program',
-                        allowed_project_types: ['innovation', 'entrepreneurship_training', 'entrepreneurship_practice']
+                        groups: []
                     }
                 };
             }
@@ -3734,9 +5992,14 @@ const Dashboard = {
             if (preset) {
                 // Merge preset data into compForm
                 this.compForm.title = preset.data.title;
-                this.compForm.level = preset.data.level;
-                this.compForm.template_type = preset.data.template_type;
-                this.compForm.organizer = preset.data.organizer;
+                this.compForm.level = preset.data.level || 'School';
+                this.compForm.template_type = preset.data.template_type || 'default';
+                this.compForm.organizer = preset.data.organizer || '';
+                
+                this.compForm.system_type = preset.data.system_type || '';
+                this.compForm.competition_level = preset.data.competition_level || '';
+                this.compForm.national_organizer = preset.data.national_organizer || '';
+                this.compForm.school_organizer = preset.data.school_organizer || '';
                 
                 // Deep merge form_config
                 this.compForm.form_config = {
@@ -3764,7 +6027,7 @@ const Dashboard = {
                 this.fetchCompetitions();
             } catch(e) { 
                 console.error(e);
-                ElementPlus.ElMessage.error(e.response?.data?.error || '操作失败'); 
+                ElementPlus.ElMessage.error(e.message || '操作失败'); 
             }
         },
         async deleteCompetition(id) {
@@ -3773,9 +6036,11 @@ const Dashboard = {
                 await axios.delete(`/api/competitions/${id}`);
                 ElementPlus.ElMessage.success('删除成功');
                 this.fetchCompetitions();
-            } catch(e) {}
+            } catch(e) {
+                if (e !== 'cancel') ElementPlus.ElMessage.error(e.message || '删除失败');
+            }
         },
-        applyCompetition(comp) {
+        async applyCompetition(comp) {
             console.log('DEBUG: applyCompetition called with:', comp);
             this.openCreateDialog();
             this.createForm.competition_id = comp.id;
@@ -3807,14 +6072,9 @@ const Dashboard = {
                     attachments: {}
                 };
             } else {
-                 // Check allowed project types for default template
-                 const allowed = this.createForm.form_config?.allowed_project_types;
-                 if (allowed && Array.isArray(allowed) && allowed.length > 0) {
-                     if (!allowed.includes(this.createForm.project_type)) {
-                         this.createForm.project_type = allowed[0];
-                     }
-                 }
+                 this.createForm.project_type = 'innovation';
             }
+            await this.maybePromptLinkDachuang(comp);
         },
 
         async viewDetails(id) {
@@ -3857,6 +6117,17 @@ const Dashboard = {
                     tpl = 'startup';
                 }
                 this.currentProject.template_type = tpl;
+                if (tpl === 'training') {
+                    await this.loadUpgradeRequests(cleanId);
+                } else {
+                    this.upgradeRequests = [];
+                }
+                if (this.canViewAdminReview()) {
+                    this.initAdminReviewFormFromProject(this.currentProject);
+                    await this.loadProjectAwards(cleanId);
+                } else {
+                    this.projectAwards = [];
+                }
 
                 this.detailActiveTab = 'basic';
                 this.isAuditing = false;
@@ -4343,7 +6614,17 @@ const Dashboard = {
         
         openCreateUserDialog() {
             this.showCreateUserDialog = true;
-            this.createUserForm = { role: '', college: this.user?.college || '' };
+            this.createUserForm = {
+                username: '',
+                real_name: '',
+                role: '',
+                college: this.user?.role === 'college_approver' ? (this.user?.college || '') : '',
+                department: '',
+                identity_number: '',
+                teaching_office: '',
+                research_area: '',
+                password: ''
+            };
         },
         async submitCreateUser() {
             if(!this.createUserForm.username || !this.createUserForm.role) {
@@ -4361,6 +6642,9 @@ const Dashboard = {
         openEditUserDialog(user) {
             this.editUserForm = JSON.parse(JSON.stringify(user));
             this.editUserForm.password = ''; // clear password
+            if (this.editUserForm.identity_number === undefined || this.editUserForm.identity_number === null) this.editUserForm.identity_number = '';
+            if (this.editUserForm.teaching_office === undefined || this.editUserForm.teaching_office === null) this.editUserForm.teaching_office = '';
+            if (this.editUserForm.research_area === undefined || this.editUserForm.research_area === null) this.editUserForm.research_area = '';
             this.showEditUserDialog = true;
         },
         async submitEditUser() {
@@ -4433,12 +6717,18 @@ const Layout = {
             </div>
         </el-header>
         <el-main class="main-content">
-            <router-view :user="user"></router-view>
+            <router-view :user="user" @login-success="forwardLoginSuccess" @logout="forwardLogout"></router-view>
         </el-main>
     </el-container>
     `,
     props: ['user'],
     methods: {
+        forwardLoginSuccess(u) {
+            this.$emit('login-success', u);
+        },
+        forwardLogout() {
+            this.$emit('logout');
+        },
         async logout() {
             await axios.post('/api/logout');
             this.$emit('logout');
@@ -4456,19 +6746,64 @@ const router = createRouter({ history: createWebHashHistory(), routes });
 const app = createApp({
     setup() {
         const user = ref(null);
+        const sessionChecked = ref(false);
+        try {
+            const cached = localStorage.getItem('user_cache');
+            if (cached) user.value = JSON.parse(cached);
+        } catch (e) {}
         onMounted(async () => {
-            try { const res = await axios.get('/api/me'); user.value = res.data; }
-            catch(e) { if(router.currentRoute.value.path !== '/login') router.push('/login'); }
+            try {
+                const res = await axios.get('/api/me');
+                user.value = res.data;
+                sessionChecked.value = true;
+                try { localStorage.setItem('user_cache', JSON.stringify(user.value)); } catch (e) {}
+            } catch(e) {
+                sessionChecked.value = true;
+                user.value = null;
+                try { localStorage.removeItem('user_cache'); } catch (e2) {}
+                if(router.currentRoute.value.path !== '/login') router.push('/login');
+            }
         });
         router.beforeEach(async (to, from, next) => {
+            if (to.path !== '/login' && !sessionChecked.value) {
+                try {
+                    const res = await axios.get('/api/me');
+                    user.value = res.data;
+                    try { localStorage.setItem('user_cache', JSON.stringify(user.value)); } catch (e) {}
+                    sessionChecked.value = true;
+                    next();
+                } catch (e) {
+                    user.value = null;
+                    try { localStorage.removeItem('user_cache'); } catch (e2) {}
+                    sessionChecked.value = true;
+                    next('/login');
+                }
+                return;
+            }
             if (to.path !== '/login' && !user.value) {
-                try { const res = await axios.get('/api/me'); user.value = res.data; next(); }
-                catch(e) { next('/login'); }
-            } else if (to.path === '/login' && user.value) { next('/'); } 
-            else { next(); }
+                next('/login');
+                return;
+            }
+            if (to.path === '/login' && user.value) {
+                next('/');
+                return;
+            }
+            next();
         });
-        const handleLoginSuccess = (u) => { user.value = u; };
-        const handleLogout = () => { user.value = null; };
+        const handleLoginSuccess = async (u) => {
+            user.value = u;
+            try { localStorage.setItem('user_cache', JSON.stringify(u)); } catch (e) {}
+            try {
+                const fresh = await axios.get('/api/me');
+                user.value = fresh.data;
+                try { localStorage.setItem('user_cache', JSON.stringify(user.value)); } catch (e) {}
+            } catch (e) {}
+        };
+        const handleLogout = () => {
+            user.value = null;
+            sessionChecked.value = true;
+            try { localStorage.removeItem('user_cache'); } catch (e) {}
+        };
         return { user, handleLoginSuccess, handleLogout };
     }
 });

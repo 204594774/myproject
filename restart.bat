@@ -1,0 +1,9 @@
+@echo off
+chcp 65001 >nul
+echo 正在关闭后端...
+taskkill /F /IM python.exe 2>nul
+echo 等待3秒...
+timeout /t 3 /nobreak >nul
+echo 正在启动后端...
+start "" cmd /c "cd /d D:\桌面\new11 && python run.py && pause"
+echo 后端已启动！
