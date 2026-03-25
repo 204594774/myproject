@@ -1,5 +1,5 @@
 const { createApp, ref, computed, onMounted } = Vue;
-console.log('%c App.js Version: v32 Loaded ', 'background: #222; color: #bada55; font-size: 16px; padding: 4px;');
+console.log('%c App.js Version: v33 Loaded ', 'background: #222; color: #bada55; font-size: 16px; padding: 4px;');
 const { createRouter, createWebHashHistory } = VueRouter;
 
 // --- GLOBAL AXIOS INTERCEPTOR ---
@@ -191,7 +191,7 @@ const Login = {
                 </el-form-item>
 
                 <div v-if="!isRegister" class="mt-4" style="text-align: center;">
-                    <p style="color: #909399; font-size: 13px; margin-bottom: 10px;">—— 快速测试通道 ——</p>
+                    <p style="color: #909399; font-size: 13px; margin-bottom: 10px;">—— 快速填充账号 ——</p>
                     <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content: center;">
                         <el-tag size="small" type="info" style="cursor: pointer;" @click="fillQuick('teacher')">老师</el-tag>
                         <el-tag size="small" type="info" style="cursor: pointer;" @click="fillQuick('student')">学生</el-tag>
@@ -201,6 +201,17 @@ const Login = {
                         <el-tag size="small" type="success" style="cursor: pointer;" @click="fillQuick('proj_admin')">项目管理</el-tag>
                         <el-tag size="small" type="danger" style="cursor: pointer;" @click="fillQuick('admin')">管理员</el-tag>
                     </div>
+                    <div style="margin-top: 6px; color:#909399; font-size: 12px;">默认密码：按账号预置</div>
+
+                    <div style="margin-top: 14px; color:#c0c4cc; font-size: 12px;">—— 大挑评审测试账号 ——</div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content: center; margin-top: 10px;">
+                        <el-tag size="small" type="warning" style="cursor: pointer;" @click="fillQuick('test_college_admin')">学院管理员(测试)</el-tag>
+                        <el-tag size="small" type="warning" style="cursor: pointer;" @click="fillQuick('test_school_admin')">学校管理员(测试)</el-tag>
+                        <el-tag size="small" type="info" style="cursor: pointer;" @click="fillQuick('test_college_judge1')">院赛评委1(测试)</el-tag>
+                        <el-tag size="small" type="info" style="cursor: pointer;" @click="fillQuick('test_school_social_leader')">校赛社科组长(测试)</el-tag>
+                        <el-tag size="small" type="info" style="cursor: pointer;" @click="fillQuick('test_school_science_leader')">校赛理工组长(测试)</el-tag>
+                    </div>
+                    <div style="margin-top: 8px; color:#909399; font-size: 12px;">测试账号默认密码：Test123456</div>
                 </div>
                 
                 <div class="form-footer" style="text-align: center; margin-top: 20px;">
@@ -338,13 +349,18 @@ const Login = {
                 judge: { u: 'judge1', p: 'admin123' },
                 college: { u: 'col_approver', p: 'admin123' },
                 school: { u: 'sch_approver', p: 'admin123' },
-                proj_admin: { u: 'proj_admin', p: 'admin123' }
+                proj_admin: { u: 'proj_admin', p: 'admin123' },
+                test_college_admin: { u: 'test_college_admin_cs', p: 'Test123456' },
+                test_school_admin: { u: 'test_school_admin', p: 'Test123456' },
+                test_college_judge1: { u: 'test_cc_college_judge1', p: 'Test123456' },
+                test_school_social_leader: { u: 'test_cc_school_social_leader', p: 'Test123456' },
+                test_school_science_leader: { u: 'test_cc_school_science_leader', p: 'Test123456' }
             };
             const v = map[type];
-            if (v) { 
-                this.form.username = v.u; 
-                this.form.password = v.p; 
-                ElementPlus.ElMessage.success('已自动填充测试账号: ' + v.u);
+            if (v) {
+                this.form.username = v.u;
+                this.form.password = v.p;
+                ElementPlus.ElMessage.success('已自动填充：' + v.u);
             }
         }
     }
@@ -753,6 +769,21 @@ const Dashboard = {
             </template>
         </el-alert>
 
+        <el-card v-if="['college_approver','school_approver','project_admin','system_admin'].includes(user?.role)" class="mb-4" shadow="hover">
+            <template #header>
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span><el-icon><Tools /></el-icon> 快速测试通道</span>
+                    <div style="display:flex; gap: 10px;">
+                        <el-button size="small" @click="showQuickTestDialog = true">查看测试账号</el-button>
+                        <el-button size="small" type="primary" :loading="bootstrappingReviews" @click="bootstrapReviewsForProject1">一键初始化ID1评审任务</el-button>
+                    </div>
+                </div>
+            </template>
+            <div style="color:#666; font-size: 12px; line-height: 20px;">
+                推荐流程：先用管理员点击“一键初始化”，再用评委账号进入“我的评审任务”进行暂存/提交验证。
+            </div>
+        </el-card>
+
         <!-- 公告栏 -->
         <el-card class="mb-4" shadow="hover">
             <template #header>
@@ -775,6 +806,70 @@ const Dashboard = {
         </el-card>
 
         <el-tabs v-model="activeTab" class="dashboard-tabs" @tab-change="handleTabChange">
+                <el-tab-pane label="我的评审任务" name="my_reviews" v-if="['judge', 'teacher', 'college_approver', 'school_approver'].includes(user?.role)">
+                    <el-card shadow="hover">
+                        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <div style="color:#666; font-size: 12px;">
+                                共 {{ Array.isArray(myReviewTasks) ? myReviewTasks.length : 0 }} 条
+                            </div>
+                            <el-button size="small" @click="fetchMyReviewTasks" :loading="loadingReviews">刷新</el-button>
+                        </div>
+                        <el-table :data="myReviewTasks" border style="width: 100%" v-loading="loadingReviews">
+                            <el-table-column prop="id" label="任务ID" width="80"></el-table-column>
+                            <el-table-column prop="project_title" label="项目名称" min-width="200"></el-table-column>
+                            <el-table-column label="赛事类型" width="120">
+                                <template #default="scope">
+                                    {{ getProjectTypeLabel(scope.row.project_type) }}
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="评审级别" width="100">
+                                <template #default="scope">
+                                    {{ scope.row.review_level === 'school' ? '校赛' : '学院赛' }}
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="状态" width="100">
+                                <template #default="scope">
+                                    <el-tag :type="scope.row.status === 'completed' ? 'success' : (scope.row.status === 'draft' ? 'warning' : 'info')">
+                                        {{ scope.row.status === 'completed' ? '已提交' : (scope.row.status === 'draft' ? '暂存' : '待评审') }}
+                                    </el-tag>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="score" label="总分" width="80"></el-table-column>
+                            <el-table-column label="操作" width="120" fixed="right">
+                                <template #default="scope">
+                                    <el-button size="small" type="primary" @click="openTaskReviewDialog(scope.row)">
+                                        {{ scope.row.status === 'completed' ? '查看' : '评审' }}
+                                    </el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </el-card>
+                </el-tab-pane>
+                <el-tab-pane label="评审管理(管理员)" name="review_management" v-if="['college_approver', 'school_approver', 'project_admin'].includes(user?.role)">
+                    <el-card shadow="hover">
+                        <div style="margin-bottom: 20px;">
+                            <el-button type="primary" @click="calcReviewRank" :loading="calculatingRank">计算平均分与排名</el-button>
+                            <span style="color: #666; margin-left: 10px; font-size: 12px;">注：会自动计算当前评审级别下所有已提交打分的平均分并生成排名</span>
+                        </div>
+                        <el-table :data="filteredProjects" border style="width: 100%" v-loading="loading">
+                            <el-table-column prop="id" label="ID" width="60"></el-table-column>
+                            <el-table-column prop="title" label="项目名称" min-width="150"></el-table-column>
+                            <el-table-column label="当前级别" width="100">
+                                <template #default="scope">{{ scope.row.current_level === 'school' ? '校赛' : '学院赛' }}</template>
+                            </el-table-column>
+                            <el-table-column prop="college_avg_score" label="院赛均分" width="100"></el-table-column>
+                            <el-table-column prop="college_rank" label="院赛排名" width="100"></el-table-column>
+                            <el-table-column prop="school_avg_score" label="校赛均分" width="100" v-if="user?.role === 'school_approver' || user?.role === 'project_admin'"></el-table-column>
+                            <el-table-column prop="school_rank" label="校赛排名" width="100" v-if="user?.role === 'school_approver' || user?.role === 'project_admin'"></el-table-column>
+                            <el-table-column label="操作" width="200" fixed="right">
+                                <template #default="scope">
+                                    <el-button size="small" type="warning" @click="openAssignDialog(scope.row)">分配评委</el-button>
+                                    <el-button size="small" type="success" v-if="scope.row.current_level === 'college' && user?.role === 'college_approver'" @click="recommendProject(scope.row, 'school')">推荐至校赛</el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </el-card>
+                </el-tab-pane>
                 <el-tab-pane label="个人中心" name="profile">
                     <el-row :gutter="20">
                         <el-col :span="12">
@@ -936,7 +1031,7 @@ const Dashboard = {
                                 <el-button size="small" @click="viewDetails(scope.row.id)">详情</el-button>
                                 
                                 <!-- 导师审批 -->
-                                <template v-if="user?.role === 'teacher' && canUserAudit(scope.row)">
+                                <template v-if="user?.role === 'teacher' && canUserAudit(scope.row) && isTemplateNeedingTeacherAudit(scope.row)">
                                     <el-button size="small" type="success" @click="openAuditDialog(scope.row, 'approve')">通过</el-button>
                                     <el-button size="small" type="danger" @click="openAuditDialog(scope.row, 'reject')">驳回</el-button>
                                 </template>
@@ -2490,6 +2585,9 @@ const Dashboard = {
                                 <el-col :span="12">
                                     <el-form-item label="国赛获奖等级">
                                         <el-select v-model="adminReviewForm.national_award_level" style="width:100%" :disabled="!canEditAdminField('national_award_level')">
+                                            <el-option label="金奖" value="gold"></el-option>
+                                            <el-option label="银奖" value="silver"></el-option>
+                                            <el-option label="铜奖" value="bronze"></el-option>
                                             <el-option label="特等" value="special"></el-option>
                                             <el-option label="一等" value="first"></el-option>
                                             <el-option label="二等" value="second"></el-option>
@@ -2537,10 +2635,132 @@ const Dashboard = {
                         </el-table>
                     </el-tab-pane>
 
+                    <el-tab-pane v-if="user?.role === 'school_approver'" label="省赛/国赛结果" name="pn_results">
+                        <el-form :model="pnResultForm" label-width="160px">
+                            <el-divider content-position="left">省赛</el-divider>
+                            <el-row :gutter="20">
+                                <el-col :span="12">
+                                    <el-form-item label="省赛状态">
+                                        <el-select v-model="pnResultForm.provincial_status" style="width:100%">
+                                            <el-option label="未参赛" value="未参赛"></el-option>
+                                            <el-option label="已参赛" value="已参赛"></el-option>
+                                            <el-option label="已获奖" value="已获奖"></el-option>
+                                        </el-select>
+                                    </el-form-item>
+                                </el-col>
+                                <el-col :span="12">
+                                    <el-form-item label="省赛获奖等级">
+                                        <el-select v-model="pnResultForm.provincial_award_level" style="width:100%">
+                                            <el-option label="特等" value="special"></el-option>
+                                            <el-option label="一等" value="first"></el-option>
+                                            <el-option label="二等" value="second"></el-option>
+                                            <el-option label="三等" value="third"></el-option>
+                                            <el-option label="优秀奖" value="excellent"></el-option>
+                                            <el-option label="无" value="none"></el-option>
+                                        </el-select>
+                                    </el-form-item>
+                                </el-col>
+                            </el-row>
+                            <el-row :gutter="20">
+                                <el-col :span="12">
+                                    <el-form-item label="获奖证书编号">
+                                        <el-input v-model="pnResultForm.provincial_certificate_no" placeholder="请输入证书编号"></el-input>
+                                    </el-form-item>
+                                </el-col>
+                                <el-col :span="12">
+                                    <el-form-item label="是否晋级国赛">
+                                        <el-switch v-model="pnResultForm.provincial_advance_national" active-text="是" inactive-text="否"></el-switch>
+                                    </el-form-item>
+                                </el-col>
+                            </el-row>
+                            <el-form-item label="省赛评审意见">
+                                <el-input v-model="pnResultForm.provincial_review_comment" type="textarea" :rows="3"></el-input>
+                            </el-form-item>
+
+                            <el-divider content-position="left">国赛</el-divider>
+                            <el-row :gutter="20">
+                                <el-col :span="12">
+                                    <el-form-item label="国赛状态">
+                                        <el-select v-model="pnResultForm.national_status" style="width:100%">
+                                            <el-option label="未参赛" value="未参赛"></el-option>
+                                            <el-option label="已参赛" value="已参赛"></el-option>
+                                            <el-option label="已获奖" value="已获奖"></el-option>
+                                        </el-select>
+                                    </el-form-item>
+                                </el-col>
+                                <el-col :span="12">
+                                    <el-form-item label="国赛获奖等级">
+                                        <el-select v-model="pnResultForm.national_award_level" style="width:100%">
+                                            <el-option label="金奖" value="gold"></el-option>
+                                            <el-option label="银奖" value="silver"></el-option>
+                                            <el-option label="铜奖" value="bronze"></el-option>
+                                            <el-option label="无" value="none"></el-option>
+                                        </el-select>
+                                    </el-form-item>
+                                </el-col>
+                            </el-row>
+                            <el-row :gutter="20">
+                                <el-col :span="12">
+                                    <el-form-item label="国赛获奖证书编号">
+                                        <el-input v-model="pnResultForm.national_certificate_no" placeholder="请输入证书编号"></el-input>
+                                    </el-form-item>
+                                </el-col>
+                            </el-row>
+                            <el-form-item label="国赛评审意见">
+                                <el-input v-model="pnResultForm.national_review_comment" type="textarea" :rows="3"></el-input>
+                            </el-form-item>
+
+                            <el-form-item>
+                                <el-button type="primary" @click="savePnResults" :loading="pnResultSaving">保存</el-button>
+                            </el-form-item>
+                        </el-form>
+                    </el-tab-pane>
+
 
 
                     <!-- Tab 3.5: 过程管理 -->
                     <el-tab-pane label="过程管理" name="process" v-if="currentProject && (user?.role === 'student' || ['project_admin', 'system_admin', 'school_approver', 'college_approver', 'teacher', 'judge'].includes(user?.role))">
+                        <el-skeleton v-if="projectProcessLoading" :rows="6" animated></el-skeleton>
+                        <template v-else-if="projectProcess && projectProcess.template_name && Array.isArray(projectProcess.process_structure) && projectProcess.process_structure.length > 0 && !projectProcess.has_mid_check && !projectProcess.has_final_acceptance">
+                            <!-- 顶置进度条 -->
+                            <el-steps :active="getProcessActiveStep()" finish-status="success" style="margin-bottom: 30px;">
+                                <el-step v-for="node in projectProcess.process_structure" :key="node" :title="node"></el-step>
+                            </el-steps>
+                            
+                            <el-timeline>
+                                <el-timeline-item v-for="(node, index) in projectProcess.process_structure" :key="node" placement="top" :type="isProcessNodeUnlocked(index) ? 'primary' : 'info'">
+                                    <el-card :style="!isProcessNodeUnlocked(index) ? 'opacity: 0.6; pointer-events: none;' : ''">
+                                        <h4>
+                                            {{ node }}
+                                            <el-tag v-if="!isProcessNodeUnlocked(index)" size="small" type="info" style="margin-left: 10px;">未解锁</el-tag>
+                                            <el-tag v-else-if="isProcessNodeCompleted(node)" size="small" type="success" style="margin-left: 10px;">
+                                                {{ projectProcess.node_current_status[node] }}
+                                            </el-tag>
+                                            <el-tag v-else size="small" type="warning" style="margin-left: 10px;">当前阶段</el-tag>
+                                        </h4>
+                                        <el-form label-width="90px" v-if="isProcessNodeUnlocked(index)">
+                                            <el-form-item label="状态">
+                                                <el-select v-model="projectProcess.node_current_status[node]" style="width: 100%" :disabled="!canEditProcessNodeFor(node)">
+                                                    <el-option v-for="opt in (projectProcess.node_status_options && projectProcess.node_status_options[node] ? projectProcess.node_status_options[node] : [])" :key="opt" :label="opt" :value="opt"></el-option>
+                                                </el-select>
+                                            </el-form-item>
+                                            <el-form-item label="获奖等级" v-if="projectProcess.node_current_status[node] === '已获奖' && projectProcess.award_levels && projectProcess.award_levels.length > 0">
+                                                <el-select v-model="projectProcess.node_award_level" style="width: 100%" :disabled="!canEditProcessNodeFor(node)">
+                                                    <el-option v-for="level in projectProcess.award_levels" :key="level" :label="level" :value="level"></el-option>
+                                                </el-select>
+                                            </el-form-item>
+                                            <el-form-item label="意见">
+                                                <el-input v-model="projectProcess.node_comments[node]" type="textarea" :rows="2" :disabled="!canEditProcessNodeFor(node)"></el-input>
+                                            </el-form-item>
+                                            <el-form-item v-if="canEditProcessNodeFor(node)">
+                                                <el-button size="small" type="primary" @click="saveProcessNode(node)" :loading="projectProcessSaving">保存</el-button>
+                                            </el-form-item>
+                                        </el-form>
+                                    </el-card>
+                                </el-timeline-item>
+                            </el-timeline>
+                        </template>
+                        <template v-else>
                         <el-timeline>
                             <!-- Midterm Check -->
                             <el-timeline-item :type="['midterm_submitted', 'midterm_advisor_approved', 'midterm_college_approved', 'midterm_approved', 'conclusion_submitted', 'conclusion_advisor_approved', 'conclusion_college_approved', 'finished'].includes(currentProject.status) ? 'success' : 'primary'" placement="top">
@@ -2647,6 +2867,7 @@ const Dashboard = {
                                 </el-card>
                             </el-timeline-item>
                         </el-timeline>
+                        </template>
                     </el-tab-pane>
 
                     <!-- Tab 4: 审核与操作 -->
@@ -2867,18 +3088,83 @@ const Dashboard = {
         </el-dialog>
 
         <!-- 评审弹窗 -->
-        <el-dialog v-model="showReviewDialog" title="项目评审" width="500px">
-            <el-form v-if="currentProject" label-width="80px">
-                <el-form-item label="评分" required>
-                    <el-input-number v-model="reviewForm.score" :min="0" :max="100"></el-input-number>
+        <!-- 评审任务分配弹窗 -->
+        <el-dialog v-model="showAssignDialog" title="分配评委" width="500px">
+            <el-form label-width="80px">
+                <el-form-item label="选择评委">
+                    <el-select v-model="assignForm.judge_ids" multiple placeholder="请选择评委" style="width: 100%">
+                        <el-option v-for="judge in availableJudges" :key="judge.id" :label="judge.real_name + ' (' + judge.department + ')'" :value="judge.id"></el-option>
+                    </el-select>
                 </el-form-item>
-                <el-form-item label="评语" required>
-                    <el-input v-model="reviewForm.comment" type="textarea" :rows="3"></el-input>
+                <el-form-item label="评审级别">
+                    <el-radio-group v-model="assignForm.review_level">
+                        <el-radio label="college">学院赛</el-radio>
+                        <el-radio label="school" v-if="user?.role === 'school_approver' || user?.role === 'system_admin'">校赛</el-radio>
+                    </el-radio-group>
                 </el-form-item>
             </el-form>
             <template #footer>
-                <el-button @click="showReviewDialog = false">取消</el-button>
-                <el-button type="primary" @click="submitReview" :loading="submitting">提交评审</el-button>
+                <el-button @click="showAssignDialog = false">取消</el-button>
+                <el-button type="primary" @click="submitAssignReviewers" :loading="submitting">确认分配</el-button>
+            </template>
+        </el-dialog>
+
+        <!-- 任务评审弹窗 (评委端) -->
+        <el-dialog v-model="showTaskReviewDialog" title="评审项目" width="600px">
+            <el-form v-if="currentTask" label-width="120px">
+                <div style="margin-bottom: 20px; padding: 10px; background: #f5f7fa; border-radius: 4px;">
+                    <strong>项目名称：</strong> {{ currentTask.project_title }}<br/>
+                    <el-button type="primary" link @click="viewDetails(currentTask.project_id)">点击查看项目详情</el-button>
+                </div>
+
+                <template v-if="currentTask.project_type === 'challenge_cup' || currentTask.project_type === 'innovation'">
+                    <el-form-item label="科学性(0-30)">
+                        <el-input-number v-model="taskReviewForm.criteria_scores.scientific" :min="0" :max="30"></el-input-number>
+                    </el-form-item>
+                    <el-form-item label="先进性(0-30)">
+                        <el-input-number v-model="taskReviewForm.criteria_scores.advanced" :min="0" :max="30"></el-input-number>
+                    </el-form-item>
+                    <el-form-item label="应用价值(0-20)">
+                        <el-input-number v-model="taskReviewForm.criteria_scores.practical" :min="0" :max="20"></el-input-number>
+                    </el-form-item>
+                    <el-form-item label="规范性(0-20)">
+                        <el-input-number v-model="taskReviewForm.criteria_scores.normative" :min="0" :max="20"></el-input-number>
+                    </el-form-item>
+                    <div style="text-align: right; color: #666; margin-bottom: 15px; font-size: 14px;">
+                        自动计算总分：<strong>{{ (taskReviewForm.criteria_scores.scientific || 0) + (taskReviewForm.criteria_scores.advanced || 0) + (taskReviewForm.criteria_scores.practical || 0) + (taskReviewForm.criteria_scores.normative || 0) }}</strong>
+                    </div>
+                </template>
+                <template v-else>
+                    <el-form-item label="总评分(0-100)">
+                        <el-input-number v-model="taskReviewForm.criteria_scores.total" :min="0" :max="100"></el-input-number>
+                    </el-form-item>
+                </template>
+
+                <el-form-item label="评审意见">
+                    <el-input v-model="taskReviewForm.comments" type="textarea" :rows="4" placeholder="请输入评审意见..."></el-input>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="showTaskReviewDialog = false">取消</el-button>
+                <el-button type="warning" @click="submitTaskReview('draft')" :loading="submitting" v-if="currentTask?.status !== 'completed'">暂存</el-button>
+                <el-button type="primary" @click="submitTaskReview('completed')" :loading="submitting" v-if="currentTask?.status !== 'completed'">提交评审 (不可修改)</el-button>
+            </template>
+        </el-dialog>
+
+        <el-dialog v-model="showQuickTestDialog" title="测试账号(快速验证)" width="650px">
+            <el-alert title="这些账号为测试用途，默认密码为 Test123456" type="warning" :closable="false" class="mb-3"></el-alert>
+            <el-table :data="quickTestAccounts" border style="width: 100%">
+                <el-table-column prop="role" label="用途" width="160"></el-table-column>
+                <el-table-column prop="username" label="用户名" width="220"></el-table-column>
+                <el-table-column prop="college" label="学院/分组" min-width="160"></el-table-column>
+                <el-table-column label="操作" width="120" fixed="right">
+                    <template #default="scope">
+                        <el-button size="small" @click="copyText(scope.row.username)">复制账号</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+            <template #footer>
+                <el-button @click="showQuickTestDialog = false">关闭</el-button>
             </template>
         </el-dialog>
         <el-dialog v-model="showUploadDialog" title="提交项目报告" width="500px">
@@ -3057,6 +3343,11 @@ const Dashboard = {
                         <template #header>数据概览</template>
                         <p>总申报数: {{ systemStats.total_projects || (systemStats.project_stats ? systemStats.project_stats.reduce((a,b)=>a+b.count,0) : 0) }}</p>
                         <p>总用户数: {{ systemStats.total_users || (systemStats.user_stats ? systemStats.user_stats.reduce((a,b)=>a+b.count,0) : 0) }}</p>
+                        <template v-if="systemStats.challenge_cup_stats">
+                            <el-divider>大挑(挑战杯)专属统计</el-divider>
+                            <p>大挑总申报数: {{ systemStats.challenge_cup_stats.total_applications }}</p>
+                            <p>大挑过审/获奖率: <el-tag type="success">{{ systemStats.challenge_cup_stats.pass_rate }}</el-tag></p>
+                        </template>
                     </el-card>
                 </el-col>
             </el-row>
@@ -4561,6 +4852,18 @@ const Dashboard = {
                 research_admin_opinion: '',
                 department_head_opinion: ''
             },
+            pnResultSaving: false,
+            pnResultForm: {
+                provincial_status: '',
+                provincial_award_level: 'none',
+                provincial_certificate_no: '',
+                provincial_advance_national: false,
+                provincial_review_comment: '',
+                national_status: '',
+                national_award_level: 'none',
+                national_certificate_no: '',
+                national_review_comment: ''
+            },
             projectAwards: [],
             projectAwardsLoading: false,
             showAwardDialog: false,
@@ -4596,12 +4899,47 @@ const Dashboard = {
             showReviewDialog: false,
             reviewForm: { score: 80, comment: '' },
             
+            // Task Review (New)
+            myReviewTasks: [],
+            loadingReviews: false,
+            showTaskReviewDialog: false,
+            currentTask: null,
+            taskReviewForm: {
+                criteria_scores: {},
+                comments: ''
+            },
+            
+            // Assign Reviewers
+            showAssignDialog: false,
+            assignForm: { judge_ids: [], review_level: 'college' },
+            availableJudges: [],
+            calculatingRank: false,
+
+            showQuickTestDialog: false,
+            bootstrappingReviews: false,
+            quickTestAccounts: [
+                { role: '学院管理员', username: 'test_college_admin_cs', college: '计算机学院' },
+                { role: '学校管理员', username: 'test_school_admin', college: '校级' },
+                { role: '院赛评委(组长)', username: 'test_cc_college_leader', college: '计算机学院' },
+                { role: '院赛评委', username: 'test_cc_college_judge1', college: '计算机学院' },
+                { role: '院赛评委', username: 'test_cc_college_judge2', college: '计算机学院' },
+                { role: '校赛社科(组长)', username: 'test_cc_school_social_leader', college: '社科组' },
+                { role: '校赛社科', username: 'test_cc_school_social_judge1', college: '社科组' },
+                { role: '校赛社科', username: 'test_cc_school_social_judge2', college: '社科组' },
+                { role: '校赛理工(组长)', username: 'test_cc_school_science_leader', college: '理工组' },
+                { role: '校赛理工', username: 'test_cc_school_science_judge1', college: '理工组' },
+                { role: '校赛理工', username: 'test_cc_school_science_judge2', college: '理工组' }
+            ],
+            
             submitting: false,
             submittingProcess: false,
             processFiles: { 
                 midterm: { report: null, achievement: null }, 
                 conclusion: { report: null, achievement: null } 
             },
+            projectProcess: null,
+            projectProcessLoading: false,
+            projectProcessSaving: false,
             
             // New Dashboard Filters & Stats
             filters: {
@@ -4763,6 +5101,10 @@ const Dashboard = {
         this.fetchProjects();
         this.fetchAnnouncements(); // 获取公告
         this.fetchCompetitions(); // 获取赛事
+        await this.fetchMyReviewTasks(); // 获取评审任务
+        if (this.user?.role === 'judge') {
+            this.activeTab = 'my_reviews';
+        }
 
         await this.fetchPermissionMode();
         await this.fetchDepartments();
@@ -4804,10 +5146,24 @@ const Dashboard = {
         }
     },
     watch: {
+        activeTab: {
+            handler(val) {
+                if (val === 'my_reviews') {
+                    this.fetchMyReviewTasks();
+                }
+            },
+            immediate: true
+        },
         user: {
             handler(val) {
                 if (val) {
                     this.profileForm = { ...val };
+                    if (['judge', 'teacher', 'college_approver', 'school_approver'].includes(val.role)) {
+                        this.fetchMyReviewTasks();
+                    }
+                    if (val.role === 'judge') {
+                        this.activeTab = 'my_reviews';
+                    }
                 }
             },
             immediate: true
@@ -4936,6 +5292,14 @@ const Dashboard = {
         }
     },
     methods: {
+        async handleTabChange(name) {
+            if (name === 'my_reviews') {
+                await this.fetchMyReviewTasks();
+            }
+            if (name === 'projects') {
+                this.fetchProjects();
+            }
+        },
         getProjectTypeLabel(type) {
             const map = {
                 'innovation': '创新训练',
@@ -5363,6 +5727,42 @@ const Dashboard = {
         },
         
         // --- Process Management ---
+        isProcessStatusCompleted(status) {
+            if (!status) return false;
+            const s = String(status).trim();
+            if (!s) return false;
+            if (s.startsWith('待')) return false;
+            if (s.includes('评审中') || s.includes('审核中') || s.includes('进行中')) return false;
+            if (s.includes('未') || s.includes('驳回') || s.includes('不通过')) return false;
+            return true;
+        },
+        isProcessNodeCompleted(nodeName) {
+            const s = this.projectProcess?.node_current_status ? this.projectProcess.node_current_status[nodeName] : null;
+            return this.isProcessStatusCompleted(s);
+        },
+        getProcessActiveStep() {
+            if (!this.projectProcess || !this.projectProcess.process_structure) return 0;
+            let active = 0;
+            for (let i = 0; i < this.projectProcess.process_structure.length; i++) {
+                const node = this.projectProcess.process_structure[i];
+                const st = this.projectProcess.node_current_status ? this.projectProcess.node_current_status[node] : null;
+                if (this.isProcessStatusCompleted(st)) {
+                    active = i + 1;
+                } else {
+                    break;
+                }
+            }
+            return active;
+        },
+        isProcessNodeUnlocked(index) {
+            if (index === 0) return true; // 第一个节点永远解锁
+            if (!this.projectProcess || !this.projectProcess.process_structure) return false;
+            
+            const prevNode = this.projectProcess.process_structure[index - 1];
+            const prevStatus = this.projectProcess.node_current_status ? this.projectProcess.node_current_status[prevNode] : null;
+            
+            return this.isProcessStatusCompleted(prevStatus);
+        },
         handleProcessUpload(event, stage, type) {
             const file = event.target.files[0];
             if (!file) return;
@@ -5439,6 +5839,70 @@ const Dashboard = {
                 ElementPlus.ElMessage.error(e.response?.data?.error || e.message || '提交失败');
             } finally {
                 this.submittingProcess = false;
+            }
+        },
+
+        async fetchProjectProcess(projectId) {
+            if (!projectId) {
+                this.projectProcess = null;
+                return;
+            }
+            this.projectProcessLoading = true;
+            try {
+                const res = await axios.get(`/api/projects/${projectId}/process`);
+                const data = res.data || {};
+                if (!data.node_current_status) data.node_current_status = {};
+                if (!data.node_comments) data.node_comments = {};
+                if (!data.node_award_levels) data.node_award_levels = {};
+                const nodes = Array.isArray(data.process_structure) ? data.process_structure : [];
+                nodes.forEach(n => {
+                    if (data.node_current_status[n] === undefined || data.node_current_status[n] === null) data.node_current_status[n] = '';
+                    if (data.node_comments[n] === undefined || data.node_comments[n] === null) data.node_comments[n] = '';
+                    if (data.node_award_levels[n] === undefined || data.node_award_levels[n] === null) data.node_award_levels[n] = '';
+                });
+                this.projectProcess = data;
+            } catch (e) {
+                console.error(e);
+                this.projectProcess = null;
+            } finally {
+                this.projectProcessLoading = false;
+            }
+        },
+
+        canEditProcessNode() {
+            const role = this.user?.role;
+            return !!role && role !== 'student';
+        },
+        canEditProcessNodeFor(nodeName) {
+            if (!this.canEditProcessNode()) return false;
+            if (this.projectProcess?.template_name === '大挑') {
+                const role = this.user?.role;
+                if (nodeName === '学院赛' && !['college_approver', 'project_admin', 'system_admin'].includes(role)) return false;
+                if (['校赛', '省赛', '国赛'].includes(nodeName) && !['school_approver', 'project_admin', 'system_admin'].includes(role)) return false;
+                if (['学院赛', '校赛'].includes(nodeName) && this.projectProcess?.node_current_status?.[nodeName] === '已推荐') return false;
+            }
+            return true;
+        },
+
+        async saveProcessNode(nodeName) {
+            if (!this.currentProject?.id || !this.projectProcess?.node_current_status) return;
+            this.projectProcessSaving = true;
+            try {
+                await axios.put(`/api/projects/${this.currentProject.id}/process`, {
+                    node_name: nodeName,
+                    current_status: this.projectProcess.node_current_status[nodeName] || '',
+                    comment: (this.projectProcess.node_comments && this.projectProcess.node_comments[nodeName]) ? this.projectProcess.node_comments[nodeName] : '',
+                    award_level: (this.projectProcess.node_award_levels && this.projectProcess.node_award_levels[nodeName]) ? this.projectProcess.node_award_levels[nodeName] : ''
+                });
+                ElementPlus.ElMessage.success('保存成功');
+                await this.fetchProjectProcess(this.currentProject.id);
+                await this.fetchProjects();
+                await this.viewDetails(this.currentProject.id);
+                await this.fetchNotifications();
+            } catch (e) {
+                ElementPlus.ElMessage.error(e.response?.data?.error || '保存失败');
+            } finally {
+                this.projectProcessSaving = false;
             }
         },
 
@@ -5532,7 +5996,18 @@ const Dashboard = {
         getStatusText(status) { return this.getStatusInfo(status).text; },
         getStatusType(status) { return this.getStatusInfo(status).type; },
         getStatusTextForRow(row) {
-            const base = this.getStatusInfo(row.status).text;
+            let base = this.getStatusInfo(row.status).text;
+            
+            // 针对不需要导师审核的赛事类项目，如果是pending/under_review，修正显示名称
+            if (!this.isTemplateNeedingTeacherAudit(row)) {
+                if (row.status === 'pending' || row.status === 'under_review') {
+                    if (row.current_level === 'national') base = '待处理（国赛）';
+                    else if (row.current_level === 'provincial') base = '待处理（省赛）';
+                    else if (row.current_level === 'school') base = '待评审（校赛）';
+                    else base = '待评审（学院赛）';
+                }
+            }
+
             const isRejected = row.status === 'rejected' || (typeof row.status === 'string' && row.status.endsWith('_rejected'));
             if (!isRejected) return base;
             const level = row.extra_info?.rejection_level
@@ -5541,6 +6016,21 @@ const Dashboard = {
         },
         
         // --- Permissions ---
+        isTemplateNeedingTeacherAudit(project) {
+            if (!project) return false;
+            // 优先使用后端解析好的准确模板名
+            const tplName = project.resolved_template_name || project.template_type || project.project_type;
+            const title = project.competition_title || project.title || '';
+            
+            // 只要是这些大创相关的类型或标题包含，就需要导师审批
+            if (['大创创新训练', '大创创业训练', '大创创业实践', 'innovation_training', 'entrepreneurship_training', 'entrepreneurship_practice', 'innovation', 'training'].includes(tplName)) {
+                return true;
+            }
+            if (title.includes('大创') || title.includes('创新训练') || title.includes('创业训练') || title.includes('创业实践')) {
+                return true;
+            }
+            return false;
+        },
         canUserAudit(project) {
             const role = this.user?.role;
             if (!role) return false;
@@ -6168,6 +6658,9 @@ const Dashboard = {
         },
         getAwardLevelText(v) {
             const s = String(v || '').trim().toLowerCase();
+            if (s === 'gold' || s === '金奖') return '金奖';
+            if (s === 'silver' || s === '银奖') return '银奖';
+            if (s === 'bronze' || s === '铜奖') return '铜奖';
             if (s === 'special' || s === '特等') return '特等';
             if (s === 'first' || s === '一等') return '一等';
             if (s === 'second' || s === '二等') return '二等';
@@ -6189,14 +6682,33 @@ const Dashboard = {
             return false;
         },
         initAdminReviewFormFromProject(p) {
+            let inferredStage = p?.review_stage || '';
+            if (!inferredStage) {
+                if (p?.current_level === 'school') inferredStage = 'school';
+                else if (p?.current_level === 'provincial') inferredStage = 'provincial';
+                else if (p?.current_level === 'national') inferredStage = 'national';
+            }
             this.adminReviewForm = {
-                review_stage: p?.review_stage || '',
+                review_stage: inferredStage,
                 college_review_result: p?.college_review_result || 'pending',
                 school_review_result: p?.school_review_result || 'pending',
                 provincial_award_level: p?.provincial_award_level || 'none',
                 national_award_level: p?.national_award_level || 'none',
                 research_admin_opinion: p?.research_admin_opinion || '',
                 department_head_opinion: p?.department_head_opinion || ''
+            };
+        },
+        initPnResultFormFromProject(p) {
+            this.pnResultForm = {
+                provincial_status: p?.provincial_status || '',
+                provincial_award_level: p?.provincial_award_level || 'none',
+                provincial_certificate_no: p?.provincial_certificate_no || '',
+                provincial_advance_national: !!p?.provincial_advance_national,
+                provincial_review_comment: p?.provincial_review_comment || '',
+                national_status: p?.national_status || '',
+                national_award_level: p?.national_award_level || 'none',
+                national_certificate_no: p?.national_certificate_no || '',
+                national_review_comment: p?.national_review_comment || ''
             };
         },
         async saveAdminReview() {
@@ -6210,6 +6722,30 @@ const Dashboard = {
                 ElementPlus.ElMessage.error(e.message || '保存失败');
             } finally {
                 this.adminReviewSaving = false;
+            }
+        },
+        async savePnResults() {
+            if (!this.currentProject?.id) return;
+            this.pnResultSaving = true;
+            try {
+                if (this.pnResultForm.provincial_award_level && this.pnResultForm.provincial_award_level !== 'none') {
+                    this.pnResultForm.provincial_status = '已获奖';
+                }
+                if (this.pnResultForm.provincial_advance_national && !this.pnResultForm.national_status) {
+                    this.pnResultForm.national_status = '未参赛';
+                }
+                if (this.pnResultForm.national_award_level && this.pnResultForm.national_award_level !== 'none') {
+                    this.pnResultForm.national_status = '已获奖';
+                }
+                await axios.put(`/api/projects/${this.currentProject.id}/competition-results`, { ...this.pnResultForm });
+                ElementPlus.ElMessage.success('保存成功');
+                await this.viewDetails(this.currentProject.id);
+                await this.fetchProjects();
+                await this.fetchNotifications();
+            } catch (e) {
+                ElementPlus.ElMessage.error(e.response?.data?.message || e.response?.data?.error || e.message || '保存失败');
+            } finally {
+                this.pnResultSaving = false;
             }
         },
         async loadProjectAwards(projectId) {
@@ -6799,6 +7335,11 @@ const Dashboard = {
                 } else {
                     this.projectAwards = [];
                 }
+                if (this.user?.role === 'school_approver') {
+                    this.initPnResultFormFromProject(this.currentProject);
+                }
+
+                await this.fetchProjectProcess(cleanId);
 
                 this.detailActiveTab = 'basic';
                 this.isAuditing = false;
@@ -6891,7 +7432,11 @@ const Dashboard = {
 
         openReviewDialog(project) {
             this.currentProject = project;
-            this.reviewForm = { score: 80, comment: '' };
+            this.reviewForm = { 
+                score: 80, 
+                comment: '', 
+                criteria_scores: { score_innovation: 8, score_feasibility: 8, score_value: 8 } 
+            };
             this.showReviewDialog = true;
         },
         async submitReview() {
@@ -6910,10 +7455,15 @@ const Dashboard = {
                     return;
                 }
                 
+                let payload = { ...this.reviewForm };
+                if (this.currentProject.project_type === 'challenge_cup') {
+                    payload.score = Math.round((payload.criteria_scores.score_innovation + payload.criteria_scores.score_feasibility + payload.criteria_scores.score_value) * 3.33);
+                }
+                
                 const url = `/api/projects/${parseInt(this.currentProject.id, 10)}/review`;
-                console.log('Submitting review to:', url, this.reviewForm);
+                console.log('Submitting review to:', url, payload);
 
-                await axios.post(url, this.reviewForm);
+                await axios.post(url, payload);
                 ElementPlus.ElMessage.success('评审提交成功');
                 this.showReviewDialog = false;
                 this.fetchProjects();
@@ -6924,6 +7474,137 @@ const Dashboard = {
                 ElementPlus.ElMessage.error(msg); 
             }
             finally { this.submitting = false; }
+        },
+
+        // New Review Tasks and Assignment methods
+        async fetchMyReviewTasks() {
+            if (!['judge', 'teacher', 'college_approver', 'school_approver'].includes(this.user?.role)) return;
+            this.loadingReviews = true;
+            try {
+                const res = await axios.get('/api/reviews/tasks');
+                const payload = res ? res.data : null;
+                if (payload && payload.code && payload.code !== 200) {
+                    this.myReviewTasks = [];
+                    ElementPlus.ElMessage.error(payload.message || '获取评审任务失败');
+                    return;
+                }
+                const list = Array.isArray(payload) ? payload : (payload && Array.isArray(payload.data) ? payload.data : []);
+                this.myReviewTasks = list;
+            } catch(e) {
+                console.error('Failed to fetch review tasks', e);
+                this.myReviewTasks = [];
+                ElementPlus.ElMessage.error(e.response?.data?.message || e.response?.data?.error || '获取评审任务失败');
+            } finally {
+                this.loadingReviews = false;
+            }
+        },
+        openTaskReviewDialog(task) {
+            this.currentTask = task;
+            this.taskReviewForm = {
+                criteria_scores: { ...task.criteria_scores },
+                comments: task.comments || ''
+            };
+            this.showTaskReviewDialog = true;
+        },
+        async submitTaskReview(status) {
+            this.submitting = true;
+            try {
+                await axios.post(`/api/reviews/tasks/${this.currentTask.id}`, {
+                    status: status,
+                    comments: this.taskReviewForm.comments,
+                    criteria_scores: this.taskReviewForm.criteria_scores
+                });
+                ElementPlus.ElMessage.success('保存成功');
+                this.showTaskReviewDialog = false;
+                this.fetchMyReviewTasks();
+            } catch(e) {
+                ElementPlus.ElMessage.error(e.response?.data?.error || '保存失败');
+            } finally {
+                this.submitting = false;
+            }
+        },
+        async openAssignDialog(project) {
+            this.currentProject = project;
+            this.assignForm = { judge_ids: [], review_level: this.user?.role === 'school_approver' ? 'school' : 'college' };
+            // Fetch available judges (could be a dedicated API, here we just use fetchUsers if available)
+            try {
+                const res = await axios.get('/api/users');
+                // Filter users who can be judges (teachers, judges, approvers)
+                this.availableJudges = (res.data.data || []).filter(u => ['teacher', 'judge', 'college_approver', 'school_approver'].includes(u.role));
+                this.showAssignDialog = true;
+            } catch(e) {
+                ElementPlus.ElMessage.error('无法获取评委列表');
+            }
+        },
+        async submitAssignReviewers() {
+            if (this.assignForm.judge_ids.length === 0) {
+                ElementPlus.ElMessage.warning('请选择至少一名评委');
+                return;
+            }
+            this.submitting = true;
+            try {
+                await axios.post('/api/reviews/assign', {
+                    project_id: this.currentProject.id,
+                    judge_ids: this.assignForm.judge_ids,
+                    review_level: this.assignForm.review_level
+                });
+                ElementPlus.ElMessage.success('分配成功');
+                this.showAssignDialog = false;
+                this.fetchProjects();
+            } catch(e) {
+                ElementPlus.ElMessage.error(e.response?.data?.error || '分配失败');
+            } finally {
+                this.submitting = false;
+            }
+        },
+        async calcReviewRank() {
+            this.calculatingRank = true;
+            try {
+                // Determine which level to calculate based on user role
+                const level = this.user?.role === 'school_approver' ? 'school' : 'college';
+                // For simplicity, just pick the first competition ID if filtering by competition, or let backend handle all active competitions.
+                // Assuming backend can handle it without competition_id or we pass the current active one.
+                await axios.post('/api/reviews/calc_rank', { review_level: level });
+                ElementPlus.ElMessage.success('计算完成');
+                this.fetchProjects();
+            } catch(e) {
+                ElementPlus.ElMessage.error(e.response?.data?.error || '计算失败');
+            } finally {
+                this.calculatingRank = false;
+            }
+        },
+        async recommendProject(project, nextLevel) {
+            try {
+                await axios.post('/api/reviews/recommend', {
+                    project_id: project.id,
+                    next_level: nextLevel
+                });
+                ElementPlus.ElMessage.success('推荐成功');
+                this.fetchProjects();
+            } catch(e) {
+                ElementPlus.ElMessage.error(e.response?.data?.error || '推荐失败');
+            }
+        },
+        async bootstrapReviewsForProject1() {
+            this.bootstrappingReviews = true;
+            try {
+                await axios.post('/api/reviews/test/bootstrap', { project_id: 1, review_level: 'college' });
+                ElementPlus.ElMessage.success('已初始化评审任务(ID 1)');
+                await this.fetchProjects();
+                await this.fetchMyReviewTasks();
+            } catch (e) {
+                ElementPlus.ElMessage.error(e.response?.data?.error || '初始化失败');
+            } finally {
+                this.bootstrappingReviews = false;
+            }
+        },
+        async copyText(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                ElementPlus.ElMessage.success('已复制');
+            } catch (e) {
+                ElementPlus.ElMessage.warning('复制失败，请手动复制');
+            }
         },
 
         // File Upload Helpers

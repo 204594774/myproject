@@ -46,6 +46,13 @@ CREATE TABLE IF NOT EXISTS projects (
     school_review_result TEXT,
     provincial_award_level TEXT,
     national_award_level TEXT,
+    provincial_status TEXT,
+    provincial_certificate_no TEXT,
+    provincial_advance_national INTEGER DEFAULT 0,
+    provincial_review_comment TEXT,
+    national_status TEXT,
+    national_certificate_no TEXT,
+    national_review_comment TEXT,
     research_admin_opinion TEXT,
     department_head_opinion TEXT,
     FOREIGN KEY (created_by) REFERENCES users (id)
@@ -226,3 +233,87 @@ CREATE TABLE IF NOT EXISTS competitions (
     form_config TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS process_templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    template_name TEXT NOT NULL UNIQUE,
+    process_structure TEXT NOT NULL,
+    has_mid_check BOOLEAN NOT NULL,
+    has_final_acceptance BOOLEAN NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS process_node_status (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    template_id INTEGER NOT NULL,
+    node_name TEXT NOT NULL,
+    status_options TEXT NOT NULL,
+    UNIQUE(template_id, node_name),
+    FOREIGN KEY (template_id) REFERENCES process_templates(id)
+);
+
+CREATE TABLE IF NOT EXISTS award_levels (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    template_id INTEGER NOT NULL UNIQUE,
+    level_options TEXT NOT NULL,
+    FOREIGN KEY (template_id) REFERENCES process_templates(id)
+);
+
+CREATE TABLE IF NOT EXISTS project_node_status (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    node_name TEXT NOT NULL,
+    current_status TEXT,
+    comment TEXT,
+    award_level TEXT,
+    updated_by INTEGER,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(project_id, node_name),
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (updated_by) REFERENCES users(id)
+);
+
+INSERT OR IGNORE INTO process_templates (template_name, process_structure, has_mid_check, has_final_acceptance) VALUES
+('大挑', '["学院赛","校赛","省赛","国赛"]', 0, 0),
+('大创创新训练', '["项目申报","学院评审","学校立项","项目实施","中期检查","结题验收"]', 1, 1),
+('国创赛', '["校赛","省赛","国赛"]', 0, 0),
+('小挑', '["校赛","省赛","国赛"]', 0, 0),
+('大创创业训练', '["项目申报","学院评审","学校立项","项目实施","中期检查","结题验收"]', 1, 1),
+('大创创业实践', '["项目申报","学院评审","学校立项","项目实施","中期检查","结题验收"]', 1, 1),
+('三创赛常规赛', '["校赛","省赛","国赛"]', 0, 0),
+('三创赛实战赛', '["校赛","省赛","国赛"]', 0, 0);
+
+INSERT OR IGNORE INTO process_node_status (template_id, node_name, status_options)
+SELECT id, '学院赛', '["待评审","已推荐","未推荐"]' FROM process_templates WHERE template_name = '大挑';
+INSERT OR IGNORE INTO process_node_status (template_id, node_name, status_options)
+SELECT id, '校赛', '["待评审","已推荐","未推荐"]' FROM process_templates WHERE template_name = '大挑';
+INSERT OR IGNORE INTO process_node_status (template_id, node_name, status_options)
+SELECT id, '省赛', '["待评审","已晋级","未晋级"]' FROM process_templates WHERE template_name = '大挑';
+INSERT OR IGNORE INTO process_node_status (template_id, node_name, status_options)
+SELECT id, '国赛', '["待评审","已获奖","未获奖"]' FROM process_templates WHERE template_name = '大挑';
+
+INSERT OR IGNORE INTO process_node_status (template_id, node_name, status_options)
+SELECT id, '校赛', '["待评审","已推荐","未推荐"]' FROM process_templates WHERE template_name IN ('国创赛','小挑','三创赛常规赛','三创赛实战赛');
+INSERT OR IGNORE INTO process_node_status (template_id, node_name, status_options)
+SELECT id, '省赛', '["待评审","已晋级","未晋级"]' FROM process_templates WHERE template_name IN ('国创赛','小挑','三创赛常规赛','三创赛实战赛');
+INSERT OR IGNORE INTO process_node_status (template_id, node_name, status_options)
+SELECT id, '国赛', '["待评审","已获奖","未获奖"]' FROM process_templates WHERE template_name IN ('国创赛','小挑','三创赛常规赛','三创赛实战赛');
+
+INSERT OR IGNORE INTO process_node_status (template_id, node_name, status_options)
+SELECT id, '项目申报', '["待导师审核","导师通过","导师驳回"]' FROM process_templates WHERE template_name IN ('大创创新训练','大创创业训练','大创创业实践');
+INSERT OR IGNORE INTO process_node_status (template_id, node_name, status_options)
+SELECT id, '学院评审', '["待评审","通过","驳回"]' FROM process_templates WHERE template_name IN ('大创创新训练','大创创业训练','大创创业实践');
+INSERT OR IGNORE INTO process_node_status (template_id, node_name, status_options)
+SELECT id, '学校立项', '["待立项","已立项","驳回"]' FROM process_templates WHERE template_name IN ('大创创新训练','大创创业训练','大创创业实践');
+INSERT OR IGNORE INTO process_node_status (template_id, node_name, status_options)
+SELECT id, '项目实施', '["进行中","已完成"]' FROM process_templates WHERE template_name IN ('大创创新训练','大创创业训练','大创创业实践');
+INSERT OR IGNORE INTO process_node_status (template_id, node_name, status_options)
+SELECT id, '中期检查', '["待提交","待审核","通过","需整改","不通过"]' FROM process_templates WHERE template_name IN ('大创创新训练','大创创业训练','大创创业实践');
+INSERT OR IGNORE INTO process_node_status (template_id, node_name, status_options)
+SELECT id, '结题验收', '["待提交","待审核","通过","不通过"]' FROM process_templates WHERE template_name IN ('大创创新训练','大创创业训练','大创创业实践');
+
+INSERT OR REPLACE INTO award_levels (template_id, level_options)
+SELECT id, '["特等奖","一等奖","二等奖","三等奖"]' FROM process_templates WHERE template_name = '大挑';
+INSERT OR REPLACE INTO award_levels (template_id, level_options)
+SELECT id, '["金奖","银奖","铜奖"]' FROM process_templates WHERE template_name IN ('国创赛','小挑');
+INSERT OR REPLACE INTO award_levels (template_id, level_options)
+SELECT id, '["特等奖","一等奖","二等奖","三等奖"]' FROM process_templates WHERE template_name IN ('三创赛常规赛','三创赛实战赛');

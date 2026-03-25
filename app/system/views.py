@@ -234,10 +234,22 @@ def get_stats():
         role_stats = conn.execute('SELECT role, COUNT(*) as count FROM users GROUP BY role').fetchall()
         college_stats = conn.execute('SELECT college, COUNT(*) as count FROM projects GROUP BY college').fetchall()
         
+        # --- 大挑 (Challenge Cup) 专属统计 ---
+        challenge_cup_stats = conn.execute("SELECT status, COUNT(*) as count FROM projects WHERE project_type = 'challenge_cup' GROUP BY status").fetchall()
+        challenge_cup_total = sum(row['count'] for row in challenge_cup_stats)
+        challenge_cup_approved = sum(row['count'] for row in challenge_cup_stats if row['status'] in ['school_approved', 'finished'])
+        
+        challenge_stats_data = {
+            'total_applications': challenge_cup_total,
+            'pass_rate': f"{(challenge_cup_approved / challenge_cup_total * 100):.2f}%" if challenge_cup_total > 0 else "0%",
+            'status_distribution': [dict(row) for row in challenge_cup_stats]
+        }
+        
         return success(data={
             'project_stats': [dict(row) for row in status_stats],
             'user_stats': [dict(row) for row in role_stats],
-            'college_stats': [dict(row) for row in college_stats]
+            'college_stats': [dict(row) for row in college_stats],
+            'challenge_cup_stats': challenge_stats_data
         })
     except Exception as e:
         return fail(str(e), 500)

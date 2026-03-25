@@ -545,11 +545,34 @@ def create_project():
             if p_type == 'innovation': t_type = 'innovation'
             else: t_type = 'startup'
             
+        
+        # Determine target status based on project type (赛事类不需要导师审批)
+        # 获取项目的模板类型或比赛类型
+        from app.projects.views import resolve_template_name
+        project_dict = {
+            'project_type': p_type,
+            'template_type': t_type,
+            'competition_id': data.get('competition_id')
+        }
+        comp_id = project_dict['competition_id']
+        if comp_id:
+            comp = conn.execute('SELECT template_type, title FROM competitions WHERE id = ?', (comp_id,)).fetchone()
+            if comp:
+                project_dict['competition_template_type'] = comp['template_type']
+                project_dict['competition_title'] = comp['title']
+        tpl_name = resolve_template_name(project_dict)
+        
+        # 如果是赛事类（大挑、小挑、国创赛、三创赛等），提交后直接进入待审核状态，跳过导师
+        if tpl_name in ['大挑', '国创赛', '小挑', '三创赛常规赛', '三创赛实战赛']:
+            target_status = 'under_review' # 学院/学校可以直接在过程管理里操作，这里可以设为 under_review 或 pending 都不影响过程管理的展示
+        else:
+            target_status = 'pending' # 大创类保留待导师审核
+
         cursor = conn.execute('''
             INSERT INTO projects (
                 title, leader_name, advisor_name, department, college, 
                 project_type, template_type, level, status, year, created_by, abstract, assessment_indicators, competition_id, extra_info, inspiration_source
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             data.get('title'),
             data.get('leader_name', user['real_name']),
@@ -559,6 +582,7 @@ def create_project():
             p_type,
             t_type,
             data.get('level', 'school'),
+            target_status,
             data.get('year', '2025'),
             user_id,
             data.get('abstract', ''),
@@ -636,8 +660,7 @@ def create_project():
 
 @app.route('/api/projects/<int:project_id>', methods=['GET'])
 def get_project_detail(project_id):
-    if project_id in [6, 7, 8, 9]:
-        return jsonify({'error': '项目不存在'}), 404
+    # REMOVED GHOST_PROJECT_IDS filtering that caused ID 1 to 9 to show as missing
     conn = get_db_connection()
     project = conn.execute('SELECT * FROM projects WHERE id = ?', (project_id,)).fetchone()
     if not project:

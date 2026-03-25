@@ -36,12 +36,16 @@ def create_app():
     from .projects.views import projects_bp
     from .users.views import users_bp
     from .system.views import system_bp
+    from .process.views import process_template_bp
+    from .reviews.views import reviews_bp
     from .errors.handlers import errors_bp
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(projects_bp)
     app.register_blueprint(users_bp)
     app.register_blueprint(system_bp)
+    app.register_blueprint(process_template_bp)
+    app.register_blueprint(reviews_bp)
     app.register_blueprint(errors_bp)
     
     # 首页路由
