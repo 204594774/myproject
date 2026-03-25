@@ -260,6 +260,158 @@ def get_project_detail(project_id):
     
     return success(data=res)
 
+@projects_bp.route('/projects/<int:project_id>', methods=['PUT'])
+@login_required
+def update_project(project_id):
+    user_id = session.get('user_id')
+    role = session.get('role')
+    
+    # Allow students and approvers to edit
+    allowed_roles = [ROLES['STUDENT'], ROLES['COLLEGE_APPROVER'], ROLES['SCHOOL_APPROVER'], ROLES['PROJECT_ADMIN']]
+    if role not in allowed_roles:
+        return fail('无权限', 403)
+
+    conn = get_db_connection()
+    project = conn.execute('SELECT * FROM projects WHERE id = ?', (project_id,)).fetchone()
+    if not project:
+        return fail('项目不存在', 404)
+        
+    data = request.json
+    extra_info_json = json.dumps(data.get('extra_info', {}))
+
+    # Permission checks
+    if role == ROLES['STUDENT']:
+        is_owner = (project['created_by'] == user_id)
+        if not is_owner:
+            user_info = conn.execute('SELECT identity_number, real_name FROM users WHERE id = ?', (user_id,)).fetchone()
+            is_leader = False
+            
+            if user_info and user_info['identity_number']:
+                member_leader = conn.execute('SELECT * FROM project_members WHERE project_id = ? AND is_leader = 1 AND student_id = ?', (project_id, user_info['identity_number'])).fetchone()
+                if member_leader: is_leader = True
+                else:
+                    all_leaders = conn.execute('SELECT * FROM project_members WHERE project_id = ? AND is_leader = 1', (project_id,)).fetchall()
+                    for l in all_leaders:
+                        if l['student_id'] and l['student_id'].strip() == user_info['identity_number'].strip():
+                            is_leader = True
+                            break
+            if not is_leader and user_info and user_info['real_name']:
+                 member_leader = conn.execute('SELECT * FROM project_members WHERE project_id = ? AND is_leader = 1 AND name = ?', (project_id, user_info['real_name'])).fetchone()
+                 if member_leader: 
+                     is_leader = True
+                 else:
+                     all_leaders = conn.execute('SELECT * FROM project_members WHERE project_id = ? AND is_leader = 1', (project_id,)).fetchall()
+                     for l in all_leaders:
+                         if l['name'] and user_info['real_name'] in l['name']:
+                             is_leader = True
+                             break
+
+            if not is_leader:
+                return fail('只能修改自己的项目', 403)
+            
+        if project['status'] not in ['pending', 'rejected', 'advisor_approved', 'college_approved']:
+            return fail('当前状态无法修改', 400)
+    
+    try:
+        new_status = project['status']
+        if role == ROLES['STUDENT']:
+            new_status = 'pending'
+            if project['status'] == 'school_approved':
+                new_status = 'school_approved'
+        
+        conn.execute('''
+            UPDATE projects SET 
+                title=?, leader_name=?, advisor_name=?, department=?, college=?,
+                project_type=?, level=?, year=?, abstract=?, assessment_indicators=?,
+                extra_info=?, status=?
+            WHERE id=?
+        ''', (
+            data.get('title'),
+            data.get('leader_name'),
+            data.get('advisor_name'),
+            data.get('department'),
+            data.get('college'),
+            data.get('project_type'),
+            data.get('level'),
+            data.get('year'),
+            data.get('abstract'),
+            data.get('assessment_indicators'),
+            extra_info_json,
+            new_status,
+            project_id
+        ))
+        
+        if data.get('project_type') == 'innovation':
+             conn.execute('''
+                UPDATE innovation_projects SET 
+                    background=?, content=?, innovation_point=?, expected_result=?, 
+                    budget=?, schedule=?, project_source=?, risk_control=?
+                WHERE project_id=?
+            ''', (
+                data.get('background'), data.get('content'), data.get('innovation_point'), 
+                data.get('expected_result'), data.get('budget'), data.get('schedule'), 
+                data.get('source'), data.get('risk_control'), 
+                project_id
+            ))
+        else:
+             conn.execute('''
+                UPDATE entrepreneurship_projects SET 
+                    team_intro=?, market_prospect=?, operation_mode=?, financial_budget=?, 
+                    risk_budget=?, investment_budget=?, project_source=?, tech_maturity=?, 
+                    enterprise_mentor=?, innovation_content=?
+                WHERE project_id=?
+            ''', (
+                data.get('team_intro'), data.get('market_prospect'), data.get('operation_mode'), 
+                data.get('financial_budget'), data.get('risk_budget'), data.get('investment_budget'), 
+                data.get('source'), data.get('tech_maturity'), data.get('enterprise_mentor'), 
+                data.get('innovation_content'), 
+                project_id
+            ))
+            
+        current_leader_member = conn.execute('SELECT * FROM project_members WHERE project_id=? AND is_leader=1', (project_id,)).fetchone()
+        conn.execute('DELETE FROM project_members WHERE project_id=?', (project_id,))
+        
+        leader_info = data.get('extra_info', {}).get('leader_info', {})
+        
+        leader_name = data.get('leader_name') or leader_info.get('name')
+        if not leader_name and current_leader_member: leader_name = current_leader_member['name']
+        if not leader_name: leader_name = project['leader_name']
+
+        leader_id = data.get('leader_id') or data.get('student_id') or leader_info.get('id')
+        if not leader_id and current_leader_member: leader_id = current_leader_member['student_id']
+
+        leader_college = data.get('college') or leader_info.get('college')
+        if not leader_college and current_leader_member: leader_college = current_leader_member['college']
+
+        leader_major = data.get('major') or leader_info.get('major')
+        if not leader_major and current_leader_member: leader_major = current_leader_member['major']
+        
+        leader_contact = data.get('contact') or data.get('email') or data.get('phone') or leader_info.get('email') or leader_info.get('phone') or ''
+        if not leader_contact and current_leader_member: leader_contact = current_leader_member['contact']
+        
+        if not leader_contact:
+             u = conn.execute('SELECT email FROM users WHERE id=?', (user_id,)).fetchone()
+             if u and u['email']: leader_contact = u['email']
+
+        conn.execute('''
+            INSERT INTO project_members (
+                project_id, is_leader, name, student_id, college, major, contact
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            project_id, True, leader_name, leader_id, leader_college, leader_major, leader_contact
+        ))
+        for m in data.get('members', []):
+            if m.get('student_id') and str(m.get('student_id')) == str(leader_id):
+                continue
+            conn.execute('INSERT INTO project_members (project_id, is_leader, name, student_id, college, major, contact) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                        (project_id, False, m.get('name'), m.get('student_id'), m.get('college'), m.get('major'), m.get('contact')))
+                        
+        conn.commit()
+        return success(message='修改成功')
+    except Exception as e:
+        conn.rollback()
+        return fail(str(e), 500)
+
 @projects_bp.route('/projects/<int:project_id>/status', methods=['PUT'])
 @login_required
 @role_required([ROLES['COLLEGE_APPROVER'], ROLES['SCHOOL_APPROVER'], ROLES['PROJECT_ADMIN']])

@@ -7,12 +7,39 @@ import sqlite3
 import os
 import json
 import shutil
+import time
+import uuid
 from datetime import datetime
 
 config = get_config()
 ROLES = config.ROLES
 
 system_bp = Blueprint('system', __name__, url_prefix='/api')
+
+@system_bp.route('/common/upload', methods=['POST'])
+def common_upload():
+    if 'file' not in request.files:
+        return fail('未上传文件', 400)
+    file = request.files['file']
+    if file.filename == '':
+        return fail('文件名为空', 400)
+        
+    if file:
+        ext = os.path.splitext(file.filename)[1]
+        filename = f"{int(time.time())}_{uuid.uuid4().hex[:8]}{ext}"
+        
+        filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+        
+        return jsonify({
+            'code': 200,
+            'message': '上传成功', 
+            'data': {
+                'url': f'/static/uploads/{filename}',
+                'filename': filename
+            }
+        })
+    return fail('上传失败', 500)
 
 @system_bp.route('/announcements', methods=['GET'])
 def get_announcements():

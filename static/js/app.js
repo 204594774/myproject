@@ -113,6 +113,45 @@ const CNMU_COLLEGE_MAJOR = {
 
 const CNMU_COLLEGES = Object.keys(CNMU_COLLEGE_MAJOR);
 
+const CNMU_DEGREE_COLLEGE_PROGRAMS = {
+    '本科': CNMU_COLLEGE_MAJOR,
+    '硕士': {
+        "文学与新闻传播学院": ["中国语言文学（一级学科硕士点）", "民俗学", "传播学"],
+        "外语学院": ["外国语言文学（一级学科硕士点）"],
+        "音乐舞蹈学院": ["中国少数民族艺术（音乐/舞蹈方向）"],
+        "体育学院": ["体育（专业硕士）"],
+        "美术学院": ["设计学（一级学科硕士点）", "美术与书法（专业硕士）", "设计（专业硕士）"],
+        "法学院": ["法学（一级学科硕士点）", "法律（专业硕士）"],
+        "民族学与社会学学院": ["民族学（一级学科硕士点）", "社会学（一级学科硕士点）", "中国史（一级学科硕士点）", "社会工作（专业硕士）", "文物与博物馆（专业硕士）"],
+        "马克思主义学院": ["马克思主义理论（一级学科硕士点）"],
+        "中华民族共同体学院": ["中华民族共同体学（交叉学科硕士点）", "中华民族学", "马克思主义民族理论与政策"],
+        "经济学院": ["理论经济学（一级学科硕士点）", "应用经济学（一级学科硕士点）", "金融（专业硕士）", "应用统计（专业硕士）", "数字经济（专业硕士）"],
+        "教育学院": ["教育学（一级学科硕士点）", "教育（专业硕士）"],
+        "管理学院": ["工商管理学（一级学科硕士点）", "管理科学与工程（一级学科硕士点）", "会计（专业硕士）"],
+        "公共管理学院": ["公共管理学（一级学科硕士点）"],
+        "国家安全学院": ["国家安全学（一级学科硕士点）"],
+        "化学与材料科学学院": ["化学（一级学科硕士点）", "材料与化工（专业硕士）"],
+        "生命科学学院": ["生物学（一级学科硕士点）", "生物与医药（专业硕士）"],
+        "资源与环境学院": ["环境科学与工程（一级学科硕士点）", "资源与环境（专业硕士）"],
+        "药学院": ["药学（一级学科硕士点）", "中药学（一级学科硕士点）", "中药（专业硕士）"],
+        "数学与统计学学院": ["数学（一级学科硕士点）"],
+        "电子信息工程学院（机器人学院）": ["信息与通信工程（一级学科硕士点）", "光学工程（一级学科硕士点）", "电子信息（专业硕士）"],
+        "计算机学院（人工智能学院）": ["计算机科学与技术（一级学科硕士点）", "电子信息（专业硕士-计算机技术方向）"],
+        "生物医学工程学院": ["生物医学工程（一级学科硕士点）", "电子信息（专业硕士-生物医学工程方向）"]
+    },
+    '博士': {
+        "文学与新闻传播学院": ["中国语言文学（博士点）"],
+        "音乐舞蹈学院": ["中国少数民族艺术（博士点）"],
+        "民族学与社会学学院": ["民族学（博士点）"],
+        "中华民族共同体学院": ["中华民族共同体学（交叉学科博士点）", "中华民族学", "马克思主义民族理论与政策"],
+        "经济学院": ["中国少数民族经济（博士点）"],
+        "教育学院": ["教育学（博士点）"],
+        "化学与材料科学学院": ["化学（博士点）"],
+        "生命科学学院": ["生物学（博士点）"],
+        "药学院": ["药学（博士点）"]
+    }
+};
+
 const ORG_DEPARTMENTS = ["创新创业学院", "信息化建设管理处"];
 
 const ROLE_FIELD2_OPTIONS = {
@@ -846,13 +885,43 @@ const Dashboard = {
                     <el-table :data="filteredProjects" style="width: 100%" v-loading="loading">
                         <el-table-column prop="id" label="ID" width="50"></el-table-column>
                         <el-table-column prop="title" label="项目名称"></el-table-column>
-                        <el-table-column prop="project_type" label="类型" width="100"></el-table-column>
-                        <el-table-column prop="level" label="级别" width="100"></el-table-column>
-                        <el-table-column prop="leader_name" label="负责人" width="100"></el-table-column>
-                        <el-table-column label="商业计划书" width="140">
+                        <el-table-column label="类型" width="120">
                             <template #default="scope">
-                                <template v-if="scope.row.extra_info && scope.row.extra_info.attachments && scope.row.extra_info.attachments.business_plan">
-                                    <el-link :href="scope.row.extra_info.attachments.business_plan" target="_blank" type="primary">查看/下载</el-link>
+                                {{ getProjectTypeLabel(scope.row.project_type) }}
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="级别" width="100">
+                            <template #default="scope">
+                                {{ getLevelLabel(scope.row.level) }}
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="leader_name" label="负责人" width="100"></el-table-column>
+                        <el-table-column label="核心材料" width="140">
+                            <template #default="scope">
+                                <template v-if="scope.row.extra_info && scope.row.extra_info.attachments">
+                                    <!-- 优先展示最有代表性的核心材料 -->
+                                    <template v-if="scope.row.extra_info.attachments.business_plan">
+                                        <el-link :href="scope.row.extra_info.attachments.business_plan" target="_blank" type="primary">查看商业计划书</el-link>
+                                    </template>
+                                    <template v-else-if="scope.row.extra_info.attachments.ns_full_text">
+                                        <el-link :href="scope.row.extra_info.attachments.ns_full_text" target="_blank" type="primary">查看论文/报告</el-link>
+                                    </template>
+                                    <template v-else-if="scope.row.extra_info.attachments.full_paper">
+                                        <el-link :href="scope.row.extra_info.attachments.full_paper" target="_blank" type="primary">查看论文/报告</el-link>
+                                    </template>
+                                    <template v-else-if="scope.row.extra_info.attachments.application_doc">
+                                        <el-link :href="scope.row.extra_info.attachments.application_doc" target="_blank" type="primary">查看申报书</el-link>
+                                    </template>
+                                    <template v-else-if="scope.row.extra_info.attachments.report">
+                                        <el-link :href="scope.row.extra_info.attachments.report" target="_blank" type="primary">查看报告</el-link>
+                                    </template>
+                                    <template v-else-if="scope.row.extra_info.attachments.proof_data">
+                                        <el-link :href="scope.row.extra_info.attachments.proof_data" target="_blank" type="primary">查看运营证明</el-link>
+                                    </template>
+                                    <template v-else-if="scope.row.extra_info.attachments.pitch_deck">
+                                        <el-link :href="scope.row.extra_info.attachments.pitch_deck" target="_blank" type="primary">查看路演PPT</el-link>
+                                    </template>
+                                    <span v-else style="color:#999">未上传</span>
                                 </template>
                                 <span v-else style="color:#999">未上传</span>
                             </template>
@@ -867,19 +936,19 @@ const Dashboard = {
                                 <el-button size="small" @click="viewDetails(scope.row.id)">详情</el-button>
                                 
                                 <!-- 导师审批 -->
-                                <template v-if="canUserAudit(scope.row)">
+                                <template v-if="user?.role === 'teacher' && canUserAudit(scope.row)">
                                     <el-button size="small" type="success" @click="openAuditDialog(scope.row, 'approve')">通过</el-button>
                                     <el-button size="small" type="danger" @click="openAuditDialog(scope.row, 'reject')">驳回</el-button>
                                 </template>
 
                                 <!-- 学院审批 -->
-                                <template v-if="canUserAudit(scope.row)">
+                                <template v-if="user?.role === 'college_approver' && canUserAudit(scope.row)">
                                     <el-button size="small" type="success" @click="openAuditDialog(scope.row, 'approve')">学院通过</el-button>
                                     <el-button size="small" type="danger" @click="openAuditDialog(scope.row, 'reject')">学院驳回</el-button>
                                 </template>
 
                                 <!-- 学校审批 -->
-                                <template v-if="canUserAudit(scope.row)">
+                                <template v-if="user?.role === 'school_approver' && canUserAudit(scope.row)">
                                     <el-button size="small" type="success" @click="openAuditDialog(scope.row, 'approve')">学校通过</el-button>
                                     <el-button size="small" type="danger" @click="openAuditDialog(scope.row, 'reject')">学校驳回</el-button>
                                 </template>
@@ -1251,10 +1320,13 @@ const Dashboard = {
 
         <!-- 申请新项目弹窗 -->
         <el-dialog v-model="showCreateDialog" :title="createDialogTitle" width="900px" destroy-on-close top="5vh" @close="handleDialogClose">
-            <el-steps :active="activeStep" finish-status="success" align-center style="margin-bottom: 20px">
+            <el-steps v-if="maxCreateStep === 2" :active="activeStep" finish-status="success" align-center style="margin-bottom: 20px">
                 <el-step title="基本信息"></el-step>
                 <el-step title="详细信息"></el-step>
                 <el-step title="团队成员"></el-step>
+            </el-steps>
+            <el-steps v-else :active="0" finish-status="success" align-center style="margin-bottom: 20px">
+                <el-step title="报名信息"></el-step>
             </el-steps>
 
             <el-form :model="createForm" label-width="110px" ref="createFormRef" size="default">
@@ -1264,145 +1336,268 @@ const Dashboard = {
                         <template v-for="(group, gIndex) in createForm.form_config.groups" :key="gIndex">
                         <div v-if="shouldShow(createForm, group)">
                             <el-divider v-if="group.title" content-position="left">{{ group.title }}</el-divider>
-                            <el-row :gutter="20">
-                                <template v-for="(field, fIndex) in group.fields" :key="fIndex">
-                                <el-col v-if="shouldShow(createForm, field)" :span="field.type === 'textarea' || field.type === 'richtext' || field.type === 'table' ? 24 : 12">
-                                    <el-form-item :label="field.label" :required="field.required">
-                                        <!-- Text Input -->
-                                        <el-input
-                                            v-if="field.type === 'text'"
-                                            :model-value="getFieldValue(createForm, field.key)"
-                                            @update:modelValue="val => setFieldValue(createForm, field.key, val)"
-                                            :placeholder="field.placeholder"
-                                            :disabled="field.disabled"></el-input>
-                                        
-                                        <!-- Textarea -->
-                                        <el-input
-                                            v-if="field.type === 'textarea'"
-                                            type="textarea"
-                                            :rows="3"
-                                            :model-value="getFieldValue(createForm, field.key)"
-                                            @update:modelValue="val => setFieldValue(createForm, field.key, val)"
-                                            :placeholder="field.placeholder"
-                                            :disabled="field.disabled"></el-input>
-
-                                        <el-input
-                                            v-if="field.type === 'richtext'"
-                                            type="textarea"
-                                            :rows="6"
-                                            :model-value="getFieldValue(createForm, field.key)"
-                                            @update:modelValue="val => setFieldValue(createForm, field.key, val)"
-                                            :placeholder="field.placeholder"
-                                            :disabled="field.disabled"></el-input>
-                                        
-                                        <!-- Select -->
-                                        <el-select
-                                            v-if="field.type === 'select'"
-                                            :model-value="getFieldValue(createForm, field.key)"
-                                            @update:modelValue="val => setFieldValue(createForm, field.key, val)"
-                                            style="width: 100%"
-                                            :placeholder="field.placeholder"
-                                            :disabled="field.disabled"
-                                            :filterable="true">
-                                            <!-- Handle dynamic options vs static options -->
-                                            <template v-if="field.key === 'project_type'">
-                                                <el-option v-for="t in allowedProjectTypes" :key="t.value" :label="t.label" :value="t.value"></el-option>
-                                            </template>
-                                            <template v-else-if="field.key === 'college'">
-                                                <el-option v-for="c in colleges" :key="c" :label="c" :value="c"></el-option>
-                                            </template>
-                                            <template v-else-if="field.key === 'department' || String(field.key).endsWith('.department')">
-                                                <el-option v-for="m in getMajorsByCollege(getFieldValue(createForm, 'extra_info.leader_info.college') || getFieldValue(createForm, 'college'))" :key="m" :label="m" :value="m"></el-option>
-                                            </template>
-                                            <template v-else-if="field.key === 'inspiration_source'">
-                                                 <!-- Special handling for inspiration source remote search -->
-                                                 <el-option v-for="item in inspirationOptions" :key="item.value" :label="item.label" :value="item.value">
-                                                    <span style="float: left">{{ item.label }}</span>
-                                                    <span style="float: right; color: #8492a6; font-size: 13px">{{ item.summary ? item.summary.substring(0, 20) + '...' : '' }}</span>
-                                                 </el-option>
-                                            </template>
-                                            <template v-else>
-                                                <el-option v-for="opt in field.options" :key="opt.value" :label="opt.label" :value="opt.value"></el-option>
-                                            </template>
-                                        </el-select>
-                                        
-                                        <!-- Date -->
-                                        <el-date-picker
-                                            v-if="field.type === 'date'"
-                                            :model-value="getFieldValue(createForm, field.key)"
-                                            @update:modelValue="val => setFieldValue(createForm, field.key, val)"
-                                            type="date"
-                                            value-format="YYYY-MM-DD"
-                                            style="width: 100%"
-                                            :placeholder="field.placeholder"></el-date-picker>
-                                        
-                                        <!-- Number -->
-                                        <el-input-number
-                                            v-if="field.type === 'number'"
-                                            :model-value="getFieldValue(createForm, field.key)"
-                                            @update:modelValue="val => setFieldValue(createForm, field.key, val)"
-                                            style="width: 100%"
-                                            :min="0"></el-input-number>
-                                        
-                                        <!-- Radio -->
-                                        <el-radio-group
-                                            v-if="field.type === 'radio'"
-                                            :model-value="getFieldValue(createForm, field.key)"
-                                            @update:modelValue="val => setFieldValue(createForm, field.key, val)">
-                                            <el-radio v-for="opt in field.options" :key="opt.value" :label="opt.value">{{ opt.label }}</el-radio>
+                            <template v-if="isAdvisorGroup(group)">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                    <span style="color: #666;">默认至少1名，最多3名</span>
+                                    <el-button size="small" type="primary" @click="addAdvisor" :disabled="createForm.extra_info.advisors.length >= 3">添加指导教师</el-button>
+                                </div>
+                                <el-card v-for="(a, idx) in createForm.extra_info.advisors" :key="idx" shadow="never" style="margin-bottom: 12px;">
+                                    <template #header>
+                                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                                            <span>指导教师{{ idx + 1 }}（{{ getAdvisorRankLabel(idx) }}）</span>
+                                            <el-button v-if="createForm.extra_info.advisors.length > 1 && idx > 0" type="danger" link size="small" @click="removeAdvisor(idx)">删除</el-button>
+                                        </div>
+                                    </template>
+                                    <el-form-item label="主次标识" required>
+                                        <el-radio-group :model-value="idx" disabled>
+                                            <el-radio :label="0">第一指导教师</el-radio>
+                                            <el-radio :label="1">第二指导教师</el-radio>
+                                            <el-radio :label="2">第三指导教师</el-radio>
                                         </el-radio-group>
-
-                                        <el-checkbox-group
-                                            v-if="field.type === 'checkbox'"
-                                            :model-value="Array.isArray(getFieldValue(createForm, field.key)) ? getFieldValue(createForm, field.key) : []"
-                                            @update:modelValue="val => setFieldValue(createForm, field.key, val)">
-                                            <el-checkbox v-for="opt in field.options" :key="opt.value" :label="opt.value">{{ opt.label }}</el-checkbox>
-                                        </el-checkbox-group>
-
-                                        <div v-if="field.type === 'file'">
-                                            <input type="file" :accept="field.accept" @change="(e) => handleFileUpload(e, field.key)">
-                                            <div v-if="getFieldValue(createForm, field.key)" style="margin-top: 5px;">
-                                                <el-tag type="success" style="margin-right: 10px;">已上传</el-tag>
-                                                <el-link :href="getFieldValue(createForm, field.key)" target="_blank" type="primary" style="margin-right: 10px;">查看</el-link>
-                                                <el-button type="danger" link size="small" @click="setFieldValue(createForm, field.key, '')">删除</el-button>
-                                            </div>
-                                            <div v-if="field.placeholder" style="font-size: 12px; color: #999;">{{ field.placeholder }}</div>
-                                        </div>
-
-                                        <div v-if="field.type === 'table' && field.columns && Array.isArray(field.columns)">
-                                            <div style="margin-bottom: 6px;">
-                                                <el-button size="small" type="primary" @click="addTableRow(createForm, field.key, field.columns)">新增</el-button>
-                                            </div>
-                                            <el-table :data="getTableRows(createForm, field.key)" border size="small">
-                                                <el-table-column v-for="col in field.columns" :key="col.key" :prop="col.key" :label="col.label" :min-width="col.width || 120">
-                                                    <template #default="scope">
-                                                        <el-input
-                                                            :model-value="scope.row[col.key]"
-                                                            @update:modelValue="val => updateTableCell(createForm, field.key, scope.$index, col.key, val)"
-                                                        ></el-input>
-                                                    </template>
-                                                </el-table-column>
-                                                <el-table-column label="操作" width="80" fixed="right">
-                                                    <template #default="scope">
-                                                        <el-button type="danger" link size="small" @click="removeTableRow(createForm, field.key, scope.$index)">删除</el-button>
-                                                    </template>
-                                                </el-table-column>
-                                            </el-table>
-                                            <div v-if="field.placeholder" style="font-size: 12px; color: #999; margin-top: 6px;">{{ field.placeholder }}</div>
-                                        </div>
-
-                                        <el-input
-                                            v-if="field.type === 'table' && (!field.columns || !Array.isArray(field.columns))"
-                                            type="textarea"
-                                            :rows="4"
-                                            :model-value="typeof getFieldValue(createForm, field.key) === 'string' ? getFieldValue(createForm, field.key) : JSON.stringify(getFieldValue(createForm, field.key) || [], null, 2)"
-                                            @update:modelValue="val => setFieldValue(createForm, field.key, val)"
-                                            :placeholder="field.placeholder"></el-input>
-
                                     </el-form-item>
-                                </el-col>
-                                </template>
-                            </el-row>
+                                    <el-row :gutter="20">
+                                        <el-col :span="12">
+                                            <el-form-item label="姓名" required>
+                                                <el-input v-model="a.name" placeholder="请输入姓名"></el-input>
+                                            </el-form-item>
+                                        </el-col>
+                                        <el-col :span="12">
+                                            <el-form-item label="职称" required>
+                                                <el-select v-model="a.title" style="width: 100%" placeholder="请选择职称" filterable>
+                                                    <el-option v-for="opt in advisorTitleOptions" :key="opt" :label="opt" :value="opt"></el-option>
+                                                </el-select>
+                                            </el-form-item>
+                                        </el-col>
+                                    </el-row>
+                                    <el-row :gutter="20">
+                                        <el-col :span="12">
+                                            <el-form-item label="所在单位" required>
+                                                <el-input v-model="a.org" placeholder="请输入所在单位"></el-input>
+                                            </el-form-item>
+                                        </el-col>
+                                        <el-col :span="12">
+                                            <el-form-item v-if="shouldShowAdvisorGuidanceType" label="指导类型" required>
+                                                <el-select v-model="a.guidance_type" style="width: 100%">
+                                                    <el-option label="校内导师" value="校内导师"></el-option>
+                                                    <el-option label="企业导师" value="企业导师"></el-option>
+                                                </el-select>
+                                            </el-form-item>
+                                            <el-form-item v-else label="指导类型">
+                                                <el-input :model-value="'校内导师'" disabled></el-input>
+                                            </el-form-item>
+                                        </el-col>
+                                    </el-row>
+                                    <el-row :gutter="20">
+                                        <el-col :span="12">
+                                            <el-form-item label="研究领域" required>
+                                                <el-input v-model="a.research_area" placeholder="请输入研究领域"></el-input>
+                                            </el-form-item>
+                                        </el-col>
+                                        <el-col :span="12">
+                                            <el-form-item label="联系电话" required>
+                                                <el-input v-model="a.phone" placeholder="请输入联系电话"></el-input>
+                                            </el-form-item>
+                                        </el-col>
+                                    </el-row>
+                                </el-card>
+                            </template>
+                            <template v-else>
+                                <el-row :gutter="20">
+                                    <template v-for="(field, fIndex) in group.fields" :key="fIndex">
+                                    <el-col v-if="shouldShow(createForm, field)" :span="field.type === 'textarea' || field.type === 'richtext' || field.type === 'table' ? 24 : 12">
+                                        <el-form-item :label="field.label" :required="field.required">
+                                            <el-input
+                                                v-if="field.type === 'text'"
+                                                :model-value="getFieldValue(createForm, field.key)"
+                                                @update:modelValue="val => setFieldValue(createForm, field.key, val)"
+                                                :placeholder="field.placeholder"
+                                                :disabled="field.disabled"></el-input>
+                                            
+                                            <el-input
+                                                v-if="field.type === 'textarea'"
+                                                type="textarea"
+                                                :rows="3"
+                                                :model-value="getFieldValue(createForm, field.key)"
+                                                @update:modelValue="val => setFieldValue(createForm, field.key, val)"
+                                                :placeholder="field.placeholder"
+                                                :disabled="field.disabled"></el-input>
+
+                                            <el-input
+                                                v-if="field.type === 'richtext'"
+                                                type="textarea"
+                                                :rows="6"
+                                                :model-value="getFieldValue(createForm, field.key)"
+                                                @update:modelValue="val => setFieldValue(createForm, field.key, val)"
+                                                :placeholder="field.placeholder"
+                                                :disabled="field.disabled"></el-input>
+                                            
+                                            <el-select
+                                                v-if="field.type === 'select'"
+                                                :model-value="getFieldValue(createForm, field.key)"
+                                                @update:modelValue="val => setFieldValue(createForm, field.key, val)"
+                                                style="width: 100%"
+                                                :placeholder="field.placeholder"
+                                                :disabled="field.disabled"
+                                                :filterable="true">
+                                                <template v-if="field.key === 'project_type'">
+                                                    <el-option v-for="t in allowedProjectTypes" :key="t.value" :label="t.label" :value="t.value"></el-option>
+                                                </template>
+                                                <template v-else-if="field.key === 'college'">
+                                                    <el-option v-for="c in colleges" :key="c" :label="c" :value="c"></el-option>
+                                                </template>
+                                                <template v-else-if="field.key === 'department' || String(field.key).endsWith('.department')">
+                                                    <el-option v-for="m in getMajorsByCollege(getFieldValue(createForm, 'extra_info.leader_info.college') || getFieldValue(createForm, 'college'))" :key="m" :label="m" :value="m"></el-option>
+                                                </template>
+                                                <template v-else-if="field.key === 'inspiration_source'">
+                                                     <el-option v-for="item in inspirationOptions" :key="item.value" :label="item.label" :value="item.value">
+                                                        <span style="float: left">{{ item.label }}</span>
+                                                        <span style="float: right; color: #8492a6; font-size: 13px">{{ item.summary ? item.summary.substring(0, 20) + '...' : '' }}</span>
+                                                     </el-option>
+                                                </template>
+                                                <template v-else>
+                                                    <el-option v-for="opt in field.options" :key="opt.value" :label="opt.label" :value="opt.value"></el-option>
+                                                </template>
+                                            </el-select>
+                                            
+                                            <el-date-picker
+                                                v-if="field.type === 'date'"
+                                                :model-value="getFieldValue(createForm, field.key)"
+                                                @update:modelValue="val => setFieldValue(createForm, field.key, val)"
+                                                type="date"
+                                                value-format="YYYY-MM-DD"
+                                                style="width: 100%"
+                                                :placeholder="field.placeholder"></el-date-picker>
+                                            
+                                            <el-input-number
+                                                v-if="field.type === 'number'"
+                                                :model-value="getFieldValue(createForm, field.key)"
+                                                @update:modelValue="val => setFieldValue(createForm, field.key, val)"
+                                                style="width: 100%"
+                                                :min="0"></el-input-number>
+                                            
+                                            <el-radio-group
+                                                v-if="field.type === 'radio'"
+                                                :model-value="getFieldValue(createForm, field.key)"
+                                                @update:modelValue="val => setFieldValue(createForm, field.key, val)">
+                                                <el-radio v-for="opt in field.options" :key="opt.value" :label="opt.value">{{ opt.label }}</el-radio>
+                                            </el-radio-group>
+
+                                            <el-checkbox-group
+                                                v-if="field.type === 'checkbox'"
+                                                :model-value="Array.isArray(getFieldValue(createForm, field.key)) ? getFieldValue(createForm, field.key) : []"
+                                                @update:modelValue="val => setFieldValue(createForm, field.key, val)">
+                                                <el-checkbox v-for="opt in field.options" :key="opt.value" :label="opt.value">{{ opt.label }}</el-checkbox>
+                                            </el-checkbox-group>
+
+                                            <div v-if="field.type === 'file'">
+                                                <input type="file" :accept="field.accept" @change="(e) => handleFileUpload(e, field.key)">
+                                                <div v-if="getFieldValue(createForm, field.key)" style="margin-top: 5px;">
+                                                    <el-tag type="success" style="margin-right: 10px;">已上传</el-tag>
+                                                    <el-link :href="getFieldValue(createForm, field.key)" target="_blank" type="primary" style="margin-right: 10px;">查看</el-link>
+                                                    <el-button type="danger" link size="small" @click="setFieldValue(createForm, field.key, '')">删除</el-button>
+                                                </div>
+                                                <div v-if="field.placeholder" style="font-size: 12px; color: #999;">{{ field.placeholder }}</div>
+                                            </div>
+
+                                            <div v-if="field.type === 'table' && getEffectiveTableColumns(field).length > 0">
+                                                <div v-if="isCollaboratorsTableField(field)" style="font-size: 12px; color: #999; margin-bottom: 6px;">
+                                                    {{ getCollaboratorsLimitHint(createForm, field.key) }}
+                                                </div>
+                                                <div style="margin-bottom: 6px;">
+                                                    <el-button size="small" type="primary" @click="addTableRowSmart(createForm, field)">新增</el-button>
+                                                </div>
+                                                <div v-if="isCollaboratorsTableField(field)" style="width: 100%; overflow-x: auto; max-width: 100%;">
+                                                    <el-table
+                                                        :data="getTableRows(createForm, field.key)"
+                                                        border
+                                                        size="small"
+                                                        style="width: 100%;">
+                                                        <el-table-column
+                                                            v-for="col in getEffectiveTableColumns(field)"
+                                                            :key="col.key"
+                                                            :prop="col.key"
+                                                            :label="col.label"
+                                                            :min-width="col.width || 120">
+                                                            <template #default="scope">
+                                                                <el-select
+                                                                    v-if="isCollaboratorsTableField(field) && col.key === '学历'"
+                                                                    :model-value="scope.row[col.key]"
+                                                                    @update:modelValue="val => updateCollaboratorTableCell(createForm, field.key, scope.$index, col.key, val)"
+                                                                    style="width: 100%">
+                                                                    <el-option label="本科" value="本科"></el-option>
+                                                                    <el-option label="硕士" value="硕士"></el-option>
+                                                                    <el-option label="博士" value="博士"></el-option>
+                                                                </el-select>
+                                                                <el-select
+                                                                    v-else-if="isCollaboratorsTableField(field) && col.key === '学院'"
+                                                                    :model-value="scope.row[col.key]"
+                                                                    @update:modelValue="val => updateCollaboratorTableCell(createForm, field.key, scope.$index, col.key, val)"
+                                                                    filterable
+                                                                    style="width: 100%">
+                                                                    <el-option v-for="c in getCollaboratorCollegeOptions(scope.row['学历'])" :key="c" :label="c" :value="c"></el-option>
+                                                                </el-select>
+                                                                <el-select
+                                                                    v-else-if="isCollaboratorsTableField(field) && col.key === '专业'"
+                                                                    :model-value="scope.row[col.key]"
+                                                                    @update:modelValue="val => updateCollaboratorTableCell(createForm, field.key, scope.$index, col.key, val)"
+                                                                    filterable
+                                                                    style="width: 100%">
+                                                                    <el-option v-for="m in getCollaboratorMajorOptions(scope.row)" :key="m" :label="m" :value="m"></el-option>
+                                                                </el-select>
+                                                                <el-input
+                                                                    v-else-if="isCollaboratorsTableField(field) && col.key === '承担工作'"
+                                                                    type="textarea"
+                                                                    :rows="2"
+                                                                    :model-value="scope.row[col.key]"
+                                                                    @update:modelValue="val => updateTableCell(createForm, field.key, scope.$index, col.key, val)"
+                                                                ></el-input>
+                                                                <el-input
+                                                                    v-else
+                                                                    :model-value="scope.row[col.key]"
+                                                                    @update:modelValue="val => updateTableCell(createForm, field.key, scope.$index, col.key, val)"
+                                                                ></el-input>
+                                                            </template>
+                                                        </el-table-column>
+                                                        <el-table-column label="操作" width="80" fixed="right">
+                                                            <template #default="scope">
+                                                                <el-button type="danger" link size="small" @click="removeTableRow(createForm, field.key, scope.$index)">删除</el-button>
+                                                            </template>
+                                                        </el-table-column>
+                                                    </el-table>
+                                                </div>
+                                                <div v-else style="width: 100%;">
+                                                    <el-table :data="getTableRows(createForm, field.key)" border size="small" style="width: 100%;">
+                                                        <el-table-column v-for="col in getEffectiveTableColumns(field)" :key="col.key" :prop="col.key" :label="col.label" :min-width="col.width || 120">
+                                                            <template #default="scope">
+                                                                <el-input
+                                                                    :model-value="scope.row[col.key]"
+                                                                    @update:modelValue="val => updateTableCell(createForm, field.key, scope.$index, col.key, val)"
+                                                                ></el-input>
+                                                            </template>
+                                                        </el-table-column>
+                                                        <el-table-column label="操作" width="80" fixed="right">
+                                                            <template #default="scope">
+                                                                <el-button type="danger" link size="small" @click="removeTableRow(createForm, field.key, scope.$index)">删除</el-button>
+                                                            </template>
+                                                        </el-table-column>
+                                                    </el-table>
+                                                </div>
+                                                <div v-if="field.placeholder && !isCollaboratorsTableField(field)" style="font-size: 12px; color: #999; margin-top: 6px;">{{ field.placeholder }}</div>
+                                            </div>
+
+                                            <el-input
+                                                v-if="field.type === 'table' && getEffectiveTableColumns(field).length === 0"
+                                                type="textarea"
+                                                :rows="4"
+                                                :model-value="typeof getFieldValue(createForm, field.key) === 'string' ? getFieldValue(createForm, field.key) : JSON.stringify(getFieldValue(createForm, field.key) || [], null, 2)"
+                                                @update:modelValue="val => setFieldValue(createForm, field.key, val)"
+                                                :placeholder="field.placeholder"></el-input>
+
+                                        </el-form-item>
+                                    </el-col>
+                                    </template>
+                                </el-row>
+                            </template>
                         </div>
                         </template>
                     </template>
@@ -1413,7 +1608,7 @@ const Dashboard = {
                 </div>
                 
                 <!-- 步骤 2 -->
-                <div v-show="activeStep === 1">
+                <div v-if="maxCreateStep >= 1" v-show="activeStep === 1">
                     <template v-if="createForm.template_type === 'startup'">
                          <el-alert 
                             v-if="isMissingPitchMaterialsInForm"
@@ -1515,7 +1710,7 @@ const Dashboard = {
                 </div>
 
                 <!-- 步骤 3 -->
-                <div v-show="activeStep === 2">
+                <div v-if="maxCreateStep >= 2" v-show="activeStep === 2">
                     <template v-if="createForm.template_type === 'startup'">
                         <el-divider content-position="left">项目负责人</el-divider>
                         <el-table :data="[createForm.extra_info.leader_info]" border style="margin-bottom: 20px">
@@ -1646,8 +1841,8 @@ const Dashboard = {
             </el-form>
             <template #footer>
                 <el-button v-if="activeStep > 0" @click="activeStep--">上一步</el-button>
-                <el-button v-if="activeStep < 2" type="primary" @click="nextStep">下一步</el-button>
-                <el-button v-if="activeStep === 2" type="primary" @click="submitProject" :loading="submitting">提交</el-button>
+                <el-button v-if="activeStep < maxCreateStep" type="primary" @click="nextStep">下一步</el-button>
+                <el-button v-if="activeStep === maxCreateStep" type="primary" @click="submitProject" :loading="submitting">提交</el-button>
             </template>
         </el-dialog>
 
@@ -1748,7 +1943,7 @@ const Dashboard = {
             <div v-if="currentProject">
                 <el-tabs v-model="detailActiveTab">
                     <!-- Tab 1: 基本信息 -->
-                    <el-tab-pane label="基本信息" name="basic">
+                    <el-tab-pane label="报名信息" name="basic">
                         <el-alert 
                             v-if="user?.role === 'student' && currentProject.status === 'school_approved' && currentProject.template_type === 'startup' && !currentProject.extra_info?.attachments?.business_plan"
                             title="提示：当前为待评审阶段，需补充上传商业计划书"
@@ -1765,7 +1960,229 @@ const Dashboard = {
                             上传商业计划书
                         </el-button>
                         <el-form label-width="110px" disabled>
-                            <template v-if="currentProject.template_type === 'startup'">
+                            <template v-if="currentProject.form_config?.groups && currentProject.form_config.groups.length > 0">
+                                <template v-for="(group, gIndex) in currentProject.form_config.groups" :key="gIndex">
+                                    <div v-if="shouldShow(currentProject, group)">
+                                        <el-divider v-if="group.title" content-position="left">{{ group.title }}</el-divider>
+                                        <template v-if="isAdvisorGroup(group)">
+                                            <template v-if="Array.isArray(currentProject.extra_info?.advisors) && currentProject.extra_info.advisors.length > 0">
+                                                <el-card v-for="(a, idx) in currentProject.extra_info.advisors" :key="idx" shadow="never" style="margin-bottom: 12px;">
+                                                    <template #header>
+                                                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                            <span>指导教师{{ idx + 1 }}（{{ getAdvisorRankLabel(idx) }}）</span>
+                                                        </div>
+                                                    </template>
+                                                    <el-form-item label="主次标识">
+                                                        <el-radio-group :model-value="idx" disabled>
+                                                            <el-radio :label="0">第一指导教师</el-radio>
+                                                            <el-radio :label="1">第二指导教师</el-radio>
+                                                            <el-radio :label="2">第三指导教师</el-radio>
+                                                        </el-radio-group>
+                                                    </el-form-item>
+                                                    <el-row :gutter="20">
+                                                        <el-col :span="12">
+                                                            <el-form-item label="姓名">
+                                                                <el-input v-model="a.name" disabled></el-input>
+                                                            </el-form-item>
+                                                        </el-col>
+                                                        <el-col :span="12">
+                                                            <el-form-item label="职称">
+                                                                <el-input v-model="a.title" disabled></el-input>
+                                                            </el-form-item>
+                                                        </el-col>
+                                                    </el-row>
+                                                    <el-row :gutter="20">
+                                                        <el-col :span="12">
+                                                            <el-form-item label="所在单位">
+                                                                <el-input v-model="a.org" disabled></el-input>
+                                                            </el-form-item>
+                                                        </el-col>
+                                                        <el-col :span="12">
+                                                            <el-form-item label="指导类型">
+                                                                <el-input v-model="a.guidance_type" disabled></el-input>
+                                                            </el-form-item>
+                                                        </el-col>
+                                                    </el-row>
+                                                    <el-row :gutter="20">
+                                                        <el-col :span="12">
+                                                            <el-form-item label="研究领域">
+                                                                <el-input v-model="a.research_area" disabled></el-input>
+                                                            </el-form-item>
+                                                        </el-col>
+                                                        <el-col :span="12">
+                                                            <el-form-item label="联系电话">
+                                                                <el-input v-model="a.phone" disabled></el-input>
+                                                            </el-form-item>
+                                                        </el-col>
+                                                    </el-row>
+                                                </el-card>
+                                            </template>
+                                            <template v-else>
+                                                <el-card shadow="never" style="margin-bottom: 12px;">
+                                                    <template #header>
+                                                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                            <span>指导教师（第一指导教师）</span>
+                                                        </div>
+                                                    </template>
+                                                    <el-row :gutter="20">
+                                                        <el-col :span="12">
+                                                            <el-form-item label="姓名">
+                                                                <el-input :model-value="currentProject.advisor_name" disabled></el-input>
+                                                            </el-form-item>
+                                                        </el-col>
+                                                        <el-col :span="12">
+                                                            <el-form-item label="职称">
+                                                                <el-input :model-value="currentProject.extra_info?.advisor_info?.title || currentProject.extra_info?.advisor_title" disabled></el-input>
+                                                            </el-form-item>
+                                                        </el-col>
+                                                    </el-row>
+                                                    <el-row :gutter="20">
+                                                        <el-col :span="12">
+                                                            <el-form-item label="所在单位">
+                                                                <el-input :model-value="currentProject.extra_info?.advisor_info?.dept || currentProject.extra_info?.advisor_unit" disabled></el-input>
+                                                            </el-form-item>
+                                                        </el-col>
+                                                        <el-col :span="12">
+                                                            <el-form-item label="指导类型">
+                                                                <el-input :model-value="'校内导师'" disabled></el-input>
+                                                            </el-form-item>
+                                                        </el-col>
+                                                    </el-row>
+                                                    <el-row :gutter="20">
+                                                        <el-col :span="12">
+                                                            <el-form-item label="研究领域">
+                                                                <el-input :model-value="currentProject.extra_info?.advisor_research" disabled></el-input>
+                                                            </el-form-item>
+                                                        </el-col>
+                                                        <el-col :span="12">
+                                                            <el-form-item label="联系电话">
+                                                                <el-input :model-value="currentProject.extra_info?.advisor_info?.phone || currentProject.extra_info?.advisor_phone" disabled></el-input>
+                                                            </el-form-item>
+                                                        </el-col>
+                                                    </el-row>
+                                                </el-card>
+                                            </template>
+                                        </template>
+                                        <template v-else>
+                                            <el-row :gutter="20">
+                                                <template v-for="(field, fIndex) in group.fields" :key="fIndex">
+                                                    <el-col v-if="shouldShow(currentProject, field)" :span="field.type === 'textarea' || field.type === 'richtext' || field.type === 'table' ? 24 : 12">
+                                                        <el-form-item :label="field.label">
+                                                            <el-input
+                                                                v-if="field.type === 'text'"
+                                                                :model-value="getFieldValue(currentProject, field.key)"
+                                                                :placeholder="field.placeholder"
+                                                                disabled></el-input>
+
+                                                            <el-input
+                                                                v-if="field.type === 'textarea'"
+                                                                type="textarea"
+                                                                :rows="3"
+                                                                :model-value="getFieldValue(currentProject, field.key)"
+                                                                :placeholder="field.placeholder"
+                                                                disabled></el-input>
+
+                                                            <el-input
+                                                                v-if="field.type === 'richtext'"
+                                                                type="textarea"
+                                                                :rows="6"
+                                                                :model-value="getFieldValue(currentProject, field.key)"
+                                                                :placeholder="field.placeholder"
+                                                                disabled></el-input>
+
+                                                            <el-select
+                                                                v-if="field.type === 'select'"
+                                                                :model-value="getFieldValue(currentProject, field.key)"
+                                                                style="width: 100%"
+                                                                :placeholder="field.placeholder"
+                                                                disabled
+                                                                :filterable="true">
+                                                                <template v-if="field.key === 'project_type'">
+                                                                    <el-option v-for="t in allowedProjectTypes" :key="t.value" :label="t.label" :value="t.value"></el-option>
+                                                                </template>
+                                                                <template v-else-if="field.key === 'college'">
+                                                                    <el-option v-for="c in colleges" :key="c" :label="c" :value="c"></el-option>
+                                                                </template>
+                                                                <template v-else-if="field.key === 'department' || String(field.key).endsWith('.department')">
+                                                                    <el-option v-for="m in getMajorsByCollege(getFieldValue(currentProject, 'extra_info.leader_info.college') || getFieldValue(currentProject, 'college'))" :key="m" :label="m" :value="m"></el-option>
+                                                                </template>
+                                                                <template v-else-if="field.key === 'inspiration_source'">
+                                                                    <el-option v-for="item in inspirationOptions" :key="item.value" :label="item.label" :value="item.value">
+                                                                        <span style="float: left">{{ item.label }}</span>
+                                                                        <span style="float: right; color: #8492a6; font-size: 13px">{{ item.summary ? item.summary.substring(0, 20) + '...' : '' }}</span>
+                                                                    </el-option>
+                                                                </template>
+                                                                <template v-else>
+                                                                    <el-option v-for="opt in field.options" :key="opt.value" :label="opt.label" :value="opt.value"></el-option>
+                                                                </template>
+                                                            </el-select>
+
+                                                            <el-date-picker
+                                                                v-if="field.type === 'date'"
+                                                                :model-value="getFieldValue(currentProject, field.key)"
+                                                                type="date"
+                                                                value-format="YYYY-MM-DD"
+                                                                style="width: 100%"
+                                                                :placeholder="field.placeholder"
+                                                                disabled></el-date-picker>
+
+                                                            <el-input-number
+                                                                v-if="field.type === 'number'"
+                                                                :model-value="getFieldValue(currentProject, field.key)"
+                                                                style="width: 100%"
+                                                                :min="0"
+                                                                disabled></el-input-number>
+
+                                                            <el-radio-group
+                                                                v-if="field.type === 'radio'"
+                                                                :model-value="getFieldValue(currentProject, field.key)"
+                                                                disabled>
+                                                                <el-radio v-for="opt in field.options" :key="opt.value" :label="opt.value">{{ opt.label }}</el-radio>
+                                                            </el-radio-group>
+
+                                                            <el-checkbox-group
+                                                                v-if="field.type === 'checkbox'"
+                                                                :model-value="Array.isArray(getFieldValue(currentProject, field.key)) ? getFieldValue(currentProject, field.key) : []"
+                                                                disabled>
+                                                                <el-checkbox v-for="opt in field.options" :key="opt.value" :label="opt.value">{{ opt.label }}</el-checkbox>
+                                                            </el-checkbox-group>
+
+                                                            <div v-if="field.type === 'file'">
+                                                                <div v-if="getFieldValue(currentProject, field.key)" style="margin-top: 5px;">
+                                                                    <el-tag type="success" style="margin-right: 10px;">已上传</el-tag>
+                                                                    <el-link :href="getFieldValue(currentProject, field.key)" target="_blank" type="primary" style="margin-right: 10px;">查看</el-link>
+                                                                </div>
+                                                                <div v-else style="margin-top: 5px;">未上传</div>
+                                                                <div v-if="field.placeholder" style="font-size: 12px; color: #999;">{{ field.placeholder }}</div>
+                                                            </div>
+
+                                                            <div v-if="field.type === 'table' && getEffectiveTableColumns(field).length > 0">
+                                                                <el-table
+                                                                    :data="getTableRows(currentProject, field.key)"
+                                                                    border
+                                                                    size="small"
+                                                                    style="width: 100%;">
+                                                                    <el-table-column
+                                                                        v-for="col in getEffectiveTableColumns(field).filter(c => c.key !== '操作')"
+                                                                        :key="col.key"
+                                                                        :prop="col.key"
+                                                                        :label="col.label"
+                                                                        :min-width="col.width || 120">
+                                                                        <template #default="scope">
+                                                                            <el-input :model-value="scope.row[col.key]" disabled size="small"></el-input>
+                                                                        </template>
+                                                                    </el-table-column>
+                                                                </el-table>
+                                                            </div>
+                                                        </el-form-item>
+                                                    </el-col>
+                                                </template>
+                                            </el-row>
+                                        </template>
+                                    </div>
+                                </template>
+                            </template>
+                            <template v-else-if="currentProject.template_type === 'startup'">
                                 <el-divider content-position="left">基本信息</el-divider>
                                 <el-row :gutter="20">
                                     <el-col :span="12"><el-form-item label="项目名称"><el-input :model-value="currentProject.title"></el-input></el-form-item></el-col>
@@ -1857,15 +2274,31 @@ const Dashboard = {
                                 </el-table>
                                 
                                 <el-divider content-position="left">指导老师</el-divider>
-                                <el-row :gutter="20">
-                                    <el-col :span="8"><el-form-item label="姓名"><el-input :model-value="currentProject.advisor_name"></el-input></el-form-item></el-col>
-                                    <el-col :span="8"><el-form-item label="部门"><el-input :model-value="currentProject.extra_info?.advisor_info?.dept"></el-input></el-form-item></el-col>
-                                    <el-col :span="8"><el-form-item label="职称"><el-input :model-value="currentProject.extra_info?.advisor_info?.title"></el-input></el-form-item></el-col>
-                                </el-row>
-                                <el-row :gutter="20">
-                                    <el-col :span="12"><el-form-item label="电话"><el-input :model-value="currentProject.extra_info?.advisor_info?.phone"></el-input></el-form-item></el-col>
-                                    <el-col :span="12"><el-form-item label="邮箱"><el-input :model-value="currentProject.extra_info?.advisor_info?.email"></el-input></el-form-item></el-col>
-                                </el-row>
+                                <template v-if="Array.isArray(currentProject.extra_info?.advisors) && currentProject.extra_info.advisors.length > 0">
+                                    <div v-for="(a, idx) in currentProject.extra_info.advisors" :key="idx" style="margin-bottom: 12px;">
+                                        <el-row :gutter="20">
+                                            <el-col :span="8"><el-form-item label="姓名"><el-input :model-value="a.name"></el-input></el-form-item></el-col>
+                                            <el-col :span="8"><el-form-item label="职称"><el-input :model-value="a.title"></el-input></el-form-item></el-col>
+                                            <el-col :span="8"><el-form-item label="所在单位"><el-input :model-value="a.org"></el-input></el-form-item></el-col>
+                                        </el-row>
+                                        <el-row :gutter="20">
+                                            <el-col :span="8"><el-form-item label="指导类型"><el-input :model-value="a.guidance_type"></el-input></el-form-item></el-col>
+                                            <el-col :span="8"><el-form-item label="研究领域"><el-input :model-value="a.research_area"></el-input></el-form-item></el-col>
+                                            <el-col :span="8"><el-form-item label="联系电话"><el-input :model-value="a.phone"></el-input></el-form-item></el-col>
+                                        </el-row>
+                                    </div>
+                                </template>
+                                <template v-else>
+                                    <el-row :gutter="20">
+                                        <el-col :span="8"><el-form-item label="姓名"><el-input :model-value="currentProject.advisor_name"></el-input></el-form-item></el-col>
+                                        <el-col :span="8"><el-form-item label="部门"><el-input :model-value="currentProject.extra_info?.advisor_info?.dept"></el-input></el-form-item></el-col>
+                                        <el-col :span="8"><el-form-item label="职称"><el-input :model-value="currentProject.extra_info?.advisor_info?.title"></el-input></el-form-item></el-col>
+                                    </el-row>
+                                    <el-row :gutter="20">
+                                        <el-col :span="12"><el-form-item label="电话"><el-input :model-value="currentProject.extra_info?.advisor_info?.phone"></el-input></el-form-item></el-col>
+                                        <el-col :span="12"><el-form-item label="邮箱"><el-input :model-value="currentProject.extra_info?.advisor_info?.email"></el-input></el-form-item></el-col>
+                                    </el-row>
+                                </template>
                                 
                                 <el-divider content-position="left">项目概述</el-divider>
                                 <el-form-item label="概述"><el-input :model-value="currentProject.abstract" type="textarea" :rows="3"></el-input></el-form-item>
@@ -1883,7 +2316,6 @@ const Dashboard = {
                                      </span>
                                 </el-form-item>
                             </template>
-                            
                             <template v-else>
                                 <el-form-item label="项目名称"><el-input :model-value="currentProject.title"></el-input></el-form-item>
                                 <el-form-item label="项目类型">
@@ -1907,7 +2339,7 @@ const Dashboard = {
                     </el-tab-pane>
 
                     <!-- Tab 2: 项目详情 -->
-                    <el-tab-pane label="项目详情" name="details">
+                    <el-tab-pane label="项目详情" name="details" v-if="!currentProject.form_config?.groups || currentProject.form_config.groups.length === 0 || currentProject.template_type === 'startup'">
                         <el-alert 
                             v-if="user?.role === 'student' && currentProject.status === 'school_approved' && currentProject.template_type === 'startup'"
                             title="提示：请点击下方“上传路演材料”进入详细信息上传相关材料"
@@ -2105,99 +2537,7 @@ const Dashboard = {
                         </el-table>
                     </el-tab-pane>
 
-                    <!-- Tab 3: 团队成员 -->
-                    <el-tab-pane label="团队成员" name="team">
-                        <el-form label-width="110px" disabled>
-                             <template v-if="currentProject.template_type === 'startup'">
-                                <el-divider content-position="left">项目负责人</el-divider>
-                                <el-table :data="[currentProject.extra_info?.leader_info || {}]" border style="margin-bottom: 20px">
-                                    <el-table-column label="姓名" min-width="100">
-                                        <template #default="scope"><el-input :model-value="scope.row.name"></el-input></template>
-                                    </el-table-column>
-                                    <el-table-column label="学号" min-width="120">
-                                        <template #default="scope"><el-input :model-value="scope.row.id"></el-input></template>
-                                    </el-table-column>
-                                    <el-table-column label="学院" min-width="150">
-                                        <template #default="scope">
-                                            <el-select :model-value="scope.row.college" placeholder="学院" disabled>
-                                                <el-option v-for="c in colleges" :key="c" :label="c" :value="c"></el-option>
-                                            </el-select>
-                                        </template>
-                                    </el-table-column>
-                                    <el-table-column label="学历层次" min-width="120">
-                                        <template #default="scope">
-                                            <el-select :model-value="scope.row.degree" placeholder="学历" disabled>
-                                                <el-option v-for="d in degrees" :key="d" :label="d" :value="d"></el-option>
-                                            </el-select>
-                                        </template>
-                                    </el-table-column>
-                                    <el-table-column label="入学年份" min-width="100">
-                                        <template #default="scope"><el-input :model-value="scope.row.year"></el-input></template>
-                                    </el-table-column>
-                                    <el-table-column label="毕业年份" min-width="100">
-                                        <template #default="scope"><el-input :model-value="scope.row.grad_year"></el-input></template>
-                                    </el-table-column>
-                                    <el-table-column label="专业名称" min-width="120">
-                                        <template #default="scope"><el-input :model-value="scope.row.major"></el-input></template>
-                                    </el-table-column>
-                                    <el-table-column label="联系电话" min-width="120">
-                                        <template #default="scope"><el-input :model-value="scope.row.phone"></el-input></template>
-                                    </el-table-column>
-                                    <el-table-column label="邮箱" min-width="150">
-                                        <template #default="scope"><el-input :model-value="scope.row.email"></el-input></template>
-                                    </el-table-column>
-                                </el-table>
-                                
-                                <el-divider content-position="left">团队主要成员</el-divider>
-                                <el-table :data="currentProject.members ? currentProject.members.filter(m => !m.is_leader) : []" border style="margin-bottom: 20px">
-                                    <el-table-column label="姓名" min-width="100">
-                                        <template #default="scope"><el-input :model-value="scope.row.name"></el-input></template>
-                                    </el-table-column>
-                                    <el-table-column label="学号" min-width="120">
-                                        <template #default="scope"><el-input :model-value="scope.row.student_id"></el-input></template>
-                                    </el-table-column>
-                                    <el-table-column label="学院" min-width="150">
-                                        <template #default="scope">
-                                            <el-select :model-value="scope.row.college" placeholder="学院" disabled>
-                                                <el-option v-for="c in colleges" :key="c" :label="c" :value="c"></el-option>
-                                            </el-select>
-                                        </template>
-                                    </el-table-column>
-                                    <el-table-column label="学历层次" min-width="120">
-                                        <template #default="scope">
-                                            <el-select :model-value="scope.row.degree" placeholder="学历" disabled>
-                                                <el-option v-for="d in degrees" :key="d" :label="d" :value="d"></el-option>
-                                            </el-select>
-                                        </template>
-                                    </el-table-column>
-                                    <el-table-column label="入学年份" min-width="100">
-                                        <template #default="scope"><el-input :model-value="scope.row.year"></el-input></template>
-                                    </el-table-column>
-                                    <el-table-column label="毕业年份" min-width="100">
-                                        <template #default="scope"><el-input :model-value="scope.row.grad_year"></el-input></template>
-                                    </el-table-column>
-                                    <el-table-column label="专业名称" min-width="120">
-                                        <template #default="scope"><el-input :model-value="scope.row.major"></el-input></template>
-                                    </el-table-column>
-                                    <el-table-column label="联系电话" min-width="120">
-                                        <template #default="scope"><el-input :model-value="scope.row.phone"></el-input></template>
-                                    </el-table-column>
-                                    <el-table-column label="邮箱" min-width="150">
-                                        <template #default="scope"><el-input :model-value="scope.row.email"></el-input></template>
-                                    </el-table-column>
-                                </el-table>
-                             </template>
-                             <template v-else>
-                                <div style="margin-bottom: 10px;">
-                                    <span>成员列表</span>
-                                </div>
-                                <el-table :data="currentProject.members ? currentProject.members.filter(m => !m.is_leader) : []" border size="small">
-                                     <el-table-column label="姓名" prop="name"></el-table-column>
-                                     <el-table-column label="学号" prop="student_id"></el-table-column>
-                                </el-table>
-                             </template>
-                        </el-form>
-                    </el-tab-pane>
+
 
                     <!-- Tab 3.5: 过程管理 -->
                     <el-tab-pane label="过程管理" name="process" v-if="currentProject && (user?.role === 'student' || ['project_admin', 'system_admin', 'school_approver', 'college_approver', 'teacher', 'judge'].includes(user?.role))">
@@ -4404,6 +4744,19 @@ const Dashboard = {
             }
             
             return allTypes;
+        },
+        advisorTitleOptions() {
+            return ['教授', '副教授', '讲师', '助教', '研究员', '副研究员', '高级工程师', '工程师', '其他'];
+        },
+        shouldShowAdvisorGuidanceType() {
+            const ptype = String(this.createForm?.project_type || '');
+            if (ptype === 'entrepreneurship_practice') return true;
+            const title = this.getCompetitionTitleById(this.createForm?.competition_id);
+            if (!title) return false;
+            return title.includes('中国国际大学生创新大赛') || title.includes('国创') || title.includes('三创');
+        },
+        maxCreateStep() {
+            return this.createForm?.template_type === 'startup' ? 2 : 0;
         }
     },
     async mounted() {
@@ -4583,6 +4936,28 @@ const Dashboard = {
         }
     },
     methods: {
+        getProjectTypeLabel(type) {
+            const map = {
+                'innovation': '创新训练',
+                'entrepreneurship_training': '创业训练',
+                'entrepreneurship_practice': '创业实践',
+                'challenge_cup': '大挑',
+                'internet_plus': '互联网+',
+                'youth_challenge': '小挑',
+                'three_creativity_regular': '三创赛常规赛',
+                'three_creativity_practical': '三创赛实战赛'
+            };
+            return map[type] || type;
+        },
+        getLevelLabel(level) {
+            const map = {
+                'national': '国家级',
+                'province': '省级',
+                'school': '校级',
+                'college': '院级'
+            };
+            return map[level] || level;
+        },
         // --- Profile Management ---
         async initProfile() {
             try {
@@ -5009,6 +5384,7 @@ const Dashboard = {
                 if (!this.processFiles[stage]) this.processFiles[stage] = {};
                 this.processFiles[stage][type] = res.data.url; // Store URL
                 ElementPlus.ElMessage.success('文件上传成功');
+                event.target.value = ''; // Reset input
             }).catch(e => {
                 console.error(e);
                 ElementPlus.ElMessage.error('上传失败: ' + (e.response?.data?.error || e.message));
@@ -5313,12 +5689,80 @@ const Dashboard = {
             }
             return [];
         },
+        isCollaboratorsTableKey(key) {
+            const k = String(key || '').trim();
+            return k === 'extra_info.collaborators_individual' || k === 'extra_info.collaborators_team';
+        },
+        isCollaboratorsTableField(field) {
+            return this.isCollaboratorsTableKey(field?.key);
+        },
+        getCollaboratorsColumns() {
+            return [
+                { label: '姓名', key: '姓名', width: 90 },
+                { label: '学号', key: '学号', width: 110 },
+                { label: '学历', key: '学历', width: 90 },
+                { label: '专业', key: '专业', width: 100 },
+                { label: '学院', key: '学院', width: 120 },
+                { label: '承担工作', key: '承担工作', width: 160 }
+            ];
+        },
+        getEffectiveTableColumns(field) {
+            if (this.isCollaboratorsTableField(field)) return this.getCollaboratorsColumns();
+            return (field && Array.isArray(field.columns)) ? field.columns : [];
+        },
+        getCollaboratorsLimit(form, fieldKey) {
+            const t = String(this.getFieldValue(form, 'extra_info.declaration_type') || '').trim();
+            if (t === 'individual') return 2;
+            if (t === 'team') return 8;
+            const k = String(fieldKey || '').trim();
+            if (k.endsWith('_individual')) return 2;
+            if (k.endsWith('_team')) return 8;
+            return 8;
+        },
+        getCollaboratorsLimitHint(form, fieldKey) {
+            const t = String(this.getFieldValue(form, 'extra_info.declaration_type') || '').trim();
+            if (t === 'individual') return '人数限制：个人项目 ≤ 2 人';
+            if (t === 'team') return '人数限制：集体项目 ≤ 8 人';
+            const limit = this.getCollaboratorsLimit(form, fieldKey);
+            return `人数限制：≤ ${limit} 人`;
+        },
+        addTableRowSmart(form, field) {
+            const columns = this.getEffectiveTableColumns(field);
+            if (this.isCollaboratorsTableField(field)) {
+                const rows = this.getTableRows(form, field.key);
+                const limit = this.getCollaboratorsLimit(form, field.key);
+                if (rows.length >= limit) {
+                    ElementPlus.ElMessage.warning(`人数上限为 ${limit} 人`);
+                    return;
+                }
+            }
+            this.addTableRow(form, field.key, columns);
+        },
         addTableRow(form, key, columns) {
             const rows = this.getTableRows(form, key);
             const row = {};
             (columns || []).forEach(c => { row[c.key] = ''; });
             rows.push(row);
             this.setFieldValue(form, key, rows);
+        },
+        validateCollaboratorsInCreateForm() {
+            const t = String(this.getFieldValue(this.createForm, 'extra_info.declaration_type') || '').trim();
+            if (t !== 'individual' && t !== 'team') return { ok: true, message: '' };
+            const key = t === 'individual' ? 'extra_info.collaborators_individual' : 'extra_info.collaborators_team';
+            const rows = this.getTableRows(this.createForm, key);
+            const limit = t === 'individual' ? 2 : 8;
+            if (rows.length < 1) return { ok: false, message: '请完善合作者信息（至少1人）' };
+            if (rows.length > limit) return { ok: false, message: `合作者人数超过限制：最多 ${limit} 人` };
+            const requiredKeys = ['姓名', '学号', '学历', '专业', '学院', '承担工作'];
+            const isEmpty = (v) => v === null || v === undefined || String(v).trim() === '';
+            for (let i = 0; i < rows.length; i++) {
+                const r = rows[i] || {};
+                for (const k of requiredKeys) {
+                    if (isEmpty(r[k])) return { ok: false, message: `请完善合作者信息第${i + 1}行：${k}` };
+                }
+                if (!['本科', '硕士', '博士'].includes(String(r['学历']).trim())) return { ok: false, message: `合作者信息第${i + 1}行：学历请选择本科/硕士/博士` };
+            }
+            return { ok: true, message: '' };
         },
         removeTableRow(form, key, index) {
             const rows = this.getTableRows(form, key);
@@ -5329,6 +5773,19 @@ const Dashboard = {
             const rows = this.getTableRows(form, key);
             if (!rows[rowIndex] || typeof rows[rowIndex] !== 'object') rows[rowIndex] = {};
             rows[rowIndex][colKey] = value;
+            this.setFieldValue(form, key, rows);
+        },
+        updateCollaboratorTableCell(form, key, rowIndex, colKey, value) {
+            const rows = this.getTableRows(form, key);
+            if (!rows[rowIndex] || typeof rows[rowIndex] !== 'object') rows[rowIndex] = {};
+            rows[rowIndex][colKey] = value;
+            if (colKey === '学历') {
+                rows[rowIndex]['学院'] = '';
+                rows[rowIndex]['专业'] = '';
+            }
+            if (colKey === '学院') {
+                rows[rowIndex]['专业'] = '';
+            }
             this.setFieldValue(form, key, rows);
         },
         setFieldValue(form, key, value) {
@@ -5352,6 +5809,22 @@ const Dashboard = {
             }
             const arr = CNMU_COLLEGE_MAJOR[c];
             return Array.isArray(arr) ? arr : [];
+        },
+        getCollaboratorCollegeOptions(degree) {
+            const d = String(degree || '').trim();
+            const map = CNMU_DEGREE_COLLEGE_PROGRAMS?.[d];
+            if (!map || typeof map !== 'object') return [];
+            return Object.keys(map).filter(k => Array.isArray(map[k]) && map[k].length > 0);
+        },
+        getCollaboratorMajorOptions(row) {
+            const d = String(row?.['学历'] || '').trim();
+            const college = String(row?.['学院'] || '').trim();
+            if (!d || !college) return [];
+            const map = CNMU_DEGREE_COLLEGE_PROGRAMS?.[d];
+            if (!map || typeof map !== 'object') return [];
+            if (d === '本科') return this.getMajorsByCollege(college);
+            const list = map[college];
+            return Array.isArray(list) ? list : [];
         },
         isOrgRole(role) {
             return ['system_admin', 'school_approver', 'project_admin'].includes(role);
@@ -5416,7 +5889,10 @@ const Dashboard = {
                 members: [],
                 template_type: 'default',
                 extra_info: {
-                    leader_info: leaderInfo
+                    leader_info: leaderInfo,
+                    advisors: [
+                        { name: '', title: '', org: '', guidance_type: '校内导师', research_area: '', phone: '' }
+                    ]
                 },
                 form_config: {
                     show_company_info: true,
@@ -5426,6 +5902,154 @@ const Dashboard = {
                 }
             };
             console.log('DEBUG: openCreateDialog reset createForm.id to undefined');
+            this.ensureCreateFormAdvisors();
+        },
+        isAdvisorGroup(group) {
+            const title = String(group?.title || '').trim();
+            return title.includes('指导教师');
+        },
+        getAdvisorRankLabel(idx) {
+            if (idx === 0) return '第一指导教师';
+            if (idx === 1) return '第二指导教师';
+            if (idx === 2) return '第三指导教师';
+            return `第${idx + 1}指导教师`;
+        },
+        normalizeAdvisorTitle(v) {
+            const s = String(v || '').trim();
+            if (!s) return '';
+            if (s === 'professor') return '教授';
+            if (s === 'associate_professor') return '副教授';
+            if (s === 'lecturer') return '讲师';
+            if (s === 'assistant') return '助教';
+            if (s === 'researcher') return '研究员';
+            if (s === 'associate_researcher') return '副研究员';
+            if (s === 'senior_engineer') return '高级工程师';
+            if (s === 'engineer') return '工程师';
+            if (s === 'other_senior') return '其他';
+            return s;
+        },
+        getCompetitionTitleById(id) {
+            if (!id) return '';
+            const comp = this.competitions?.find(c => String(c.id) === String(id));
+            return comp ? String(comp.title || '') : '';
+        },
+        ensureCreateFormAdvisors() {
+            if (!this.createForm) this.createForm = {};
+            if (!this.createForm.extra_info || typeof this.createForm.extra_info !== 'object') this.createForm.extra_info = {};
+            const ei = this.createForm.extra_info;
+            if (!Array.isArray(ei.advisors) || ei.advisors.length === 0) {
+                const legacyInfo = ei.advisor_info || {};
+                const a0 = {
+                    name: String(this.createForm.advisor_name || '').trim(),
+                    title: this.normalizeAdvisorTitle(legacyInfo.title || ei.advisor_title || ''),
+                    org: String(ei.advisor_unit || legacyInfo.dept || '').trim(),
+                    guidance_type: '校内导师',
+                    research_area: String(ei.advisor_research || '').trim(),
+                    phone: String(ei.advisor_phone || legacyInfo.phone || '').trim()
+                };
+                ei.advisors = [a0];
+            } else {
+                ei.advisors = ei.advisors.slice(0, 3).map(a => ({
+                    name: String(a?.name || '').trim(),
+                    title: this.normalizeAdvisorTitle(a?.title || ''),
+                    org: String(a?.org || '').trim(),
+                    guidance_type: String(a?.guidance_type || '校内导师').trim() || '校内导师',
+                    research_area: String(a?.research_area || '').trim(),
+                    phone: String(a?.phone || '').trim()
+                }));
+            }
+            if (!this.shouldShowAdvisorGuidanceType) {
+                for (const a of ei.advisors) a.guidance_type = '校内导师';
+            } else {
+                for (const a of ei.advisors) {
+                    if (!a.guidance_type) a.guidance_type = '校内导师';
+                }
+            }
+        },
+        addAdvisor() {
+            this.ensureCreateFormAdvisors();
+            const ei = this.createForm.extra_info;
+            if (ei.advisors.length >= 3) return;
+            ei.advisors.push({ name: '', title: '', org: '', guidance_type: '校内导师', research_area: '', phone: '' });
+            this.ensureCreateFormAdvisors();
+        },
+        removeAdvisor(idx) {
+            this.ensureCreateFormAdvisors();
+            const ei = this.createForm.extra_info;
+            if (ei.advisors.length <= 1) return;
+            if (idx <= 0) return;
+            ei.advisors.splice(idx, 1);
+        },
+        advisorTitleLevel(title) {
+            const s = String(title || '').trim();
+            if (!s) return 0;
+            if (s.includes('教授') && !s.includes('副')) return 3;
+            if (s.includes('副教授')) return 2;
+            if (s.includes('研究员') && !s.includes('副')) return 3;
+            if (s.includes('副研究员')) return 2;
+            if (s.includes('高级工程师')) return 2;
+            if (s.includes('讲师')) return 1;
+            if (s.includes('工程师')) return 1;
+            if (s.includes('助教')) return 0;
+            return 0;
+        },
+        getMentorValidationCategory() {
+            const title = this.getCompetitionTitleById(this.createForm?.competition_id);
+            if (title.includes('挑战杯') || title.includes('大挑')) return 'daitiao';
+            if (this.createForm?.template_type === 'training') return 'dachuang';
+            if (title.includes('大创') || title.includes('创新训练') || title.includes('创业训练') || title.includes('创业实践')) return 'dachuang';
+            const ptype = String(this.createForm?.project_type || '');
+            if (!this.createForm?.competition_id && ['innovation', 'entrepreneurship_training', 'entrepreneurship_practice'].includes(ptype)) return 'dachuang';
+            return 'other';
+        },
+        isAdvisorComplete(a) {
+            const v = (x) => String(x || '').trim();
+            if (!v(a?.name)) return false;
+            if (!v(a?.title)) return false;
+            if (!v(a?.org)) return false;
+            if (this.shouldShowAdvisorGuidanceType && !v(a?.guidance_type)) return false;
+            if (!v(a?.research_area)) return false;
+            if (!v(a?.phone)) return false;
+            return true;
+        },
+        validateAdvisorsInCreateForm() {
+            this.ensureCreateFormAdvisors();
+            const advisors = this.createForm.extra_info.advisors;
+            if (!Array.isArray(advisors) || advisors.length < 1) return { ok: false, message: '请至少填写1名指导教师信息' };
+            if (advisors.length > 3) return { ok: false, message: '指导教师最多3人' };
+            if (!this.isAdvisorComplete(advisors[0])) return { ok: false, message: '第一指导教师信息不完整' };
+            for (let i = 1; i < advisors.length; i++) {
+                if (!this.isAdvisorComplete(advisors[i])) return { ok: false, message: `请完善指导教师${i + 1}信息或删除该指导教师` };
+            }
+            const cat = this.getMentorValidationCategory();
+            if (cat === 'daitiao') {
+                const ok = advisors.some(a => this.advisorTitleLevel(a.title) >= 2);
+                if (!ok) return { ok: false, message: '大挑项目至少1名指导教师职称为副教授或以上' };
+            } else if (cat === 'dachuang') {
+                const ok = advisors.some(a => this.advisorTitleLevel(a.title) >= 1);
+                if (!ok) return { ok: false, message: '大创项目至少1名指导教师职称为讲师或以上' };
+            }
+            return { ok: true, message: '' };
+        },
+        validateDynamicRequiredFieldsInCreateForm() {
+            const cfg = this.createForm?.form_config;
+            const groups = cfg?.groups;
+            if (!Array.isArray(groups) || !groups.length) return { ok: true, message: '' };
+            for (const group of groups) {
+                if (this.isAdvisorGroup(group)) continue;
+                if (!this.shouldShow(this.createForm, group)) continue;
+                const fields = Array.isArray(group?.fields) ? group.fields : [];
+                for (const field of fields) {
+                    if (!this.shouldShow(this.createForm, field)) continue;
+                    if (!field?.required) continue;
+                    const val = this.getFieldValue(this.createForm, field.key);
+                    if (val === null || val === undefined) return { ok: false, message: `${field.label || '字段'}为必填项` };
+                    if (typeof val === 'string' && val.trim() === '') return { ok: false, message: `${field.label || '字段'}为必填项` };
+                    if (Array.isArray(val) && val.length === 0) return { ok: false, message: `${field.label || '字段'}为必填项` };
+                    if (typeof val === 'object' && !Array.isArray(val) && Object.keys(val).length === 0) return { ok: false, message: `${field.label || '字段'}为必填项` };
+                }
+            }
+            return { ok: true, message: '' };
         },
         addMember() { 
             const leaderCollege = this.createForm.extra_info?.leader_info?.college || this.createForm.college || '';
@@ -5666,7 +6290,8 @@ const Dashboard = {
         async maybePromptLinkDachuang(comp) {
             if (this.user?.role !== 'student') return;
             const title = String(comp?.title || '');
-            if (!title.includes('中国国际大学生创新大赛')) return;
+            const allow = title.includes('大创创新训练') || title.includes('大创创业训练') || title.includes('大创创业实践') || title.includes('大学生创新训练计划') || title.includes('大学生创新创业训练计划');
+            if (!allow) return;
             try {
                 const res = await axios.get('/api/my/dachuang-projects');
                 const list = Array.isArray(res.data) ? res.data : [];
@@ -5764,6 +6389,23 @@ const Dashboard = {
                 this.createForm.contact = l.email || l.phone;
             }
 
+            this.ensureCreateFormAdvisors();
+            const advisorCheck = this.validateAdvisorsInCreateForm();
+            if (!advisorCheck.ok) {
+                ElementPlus.ElMessage.warning(advisorCheck.message);
+                return;
+            }
+            const collaboratorsCheck = this.validateCollaboratorsInCreateForm();
+            if (!collaboratorsCheck.ok) {
+                ElementPlus.ElMessage.warning(collaboratorsCheck.message);
+                return;
+            }
+            const dynCheck = this.validateDynamicRequiredFieldsInCreateForm();
+            if (!dynCheck.ok) {
+                ElementPlus.ElMessage.warning(dynCheck.message);
+                return;
+            }
+
             // Validation
             if (this.createForm.template_type === 'startup') {
                 if (!this.createForm.title) {
@@ -5791,6 +6433,22 @@ const Dashboard = {
             this.submitting = true;
             try {
                 const payload = JSON.parse(JSON.stringify(this.createForm));
+                if (!payload.extra_info || typeof payload.extra_info !== 'object') payload.extra_info = {};
+                if (!Array.isArray(payload.extra_info.advisors)) payload.extra_info.advisors = [];
+                if (payload.extra_info.advisors.length) {
+                    const a0 = payload.extra_info.advisors[0] || {};
+                    payload.advisor_name = String(a0.name || '').trim();
+                    payload.extra_info.advisor_title = String(a0.title || '').trim();
+                    payload.extra_info.advisor_unit = String(a0.org || '').trim();
+                    payload.extra_info.advisor_research = String(a0.research_area || '').trim();
+                    payload.extra_info.advisor_phone = String(a0.phone || '').trim();
+                    payload.extra_info.advisor_info = {
+                        dept: String(a0.org || '').trim(),
+                        title: String(a0.title || '').trim(),
+                        phone: String(a0.phone || '').trim(),
+                        email: String(payload.extra_info?.advisor_info?.email || '').trim()
+                    };
+                }
                 if (payload.template_type === 'startup' && Array.isArray(payload.members)) {
                     payload.members = payload.members.slice(1);
                 }
@@ -5891,7 +6549,7 @@ const Dashboard = {
                     this.showCreateDialog = false;
                     this.fetchProjects();
                 } else {
-                    ElementPlus.ElMessage.error(error.response?.data?.error || '操作失败');
+                    ElementPlus.ElMessage.error(error.response?.data?.error || error.response?.data?.message || '操作失败');
                 }
             } finally {
                 this.submitting = false;
@@ -6069,11 +6727,15 @@ const Dashboard = {
                     },
                     advisor_info: {},
                     leader_info: currentLeaderInfo,
-                    attachments: {}
+                    attachments: {},
+                    advisors: [
+                        { name: '', title: '', org: '', guidance_type: '校内导师', research_area: '', phone: '' }
+                    ]
                 };
             } else {
                  this.createForm.project_type = 'innovation';
             }
+            this.ensureCreateFormAdvisors();
             await this.maybePromptLinkDachuang(comp);
         },
 
@@ -6100,9 +6762,10 @@ const Dashboard = {
                 console.log('DEBUG: this.currentProject set to:', this.currentProject);
 
                 let tpl = 'default';
+                let comp = null;
                 if (this.currentProject.competition_id) {
                     const compId = Number(this.currentProject.competition_id);
-                    let comp = this.competitions.find(c => Number(c.id) === compId);
+                    comp = this.competitions.find(c => Number(c.id) === compId);
                     if (!comp) {
                         try {
                             const compsRes = await axios.get('/api/competitions');
@@ -6111,6 +6774,14 @@ const Dashboard = {
                         } catch(e) {}
                     }
                     if (comp && comp.template_type) tpl = comp.template_type;
+                }
+                if (comp && comp.form_config) {
+                    try {
+                        const fc = (typeof comp.form_config === 'string') ? JSON.parse(comp.form_config) : comp.form_config;
+                        this.currentProject.form_config = fc;
+                    } catch (e) {
+                        this.currentProject.form_config = { groups: [] };
+                    }
                 }
                 const info = this.currentProject?.extra_info || {};
                 if (tpl === 'default' && (info.company_info || info.leader_info || info.attachments)) {
@@ -6257,18 +6928,13 @@ const Dashboard = {
 
         // File Upload Helpers
         handleFileUpload(event, path) {
-            const file = event.target.files[0];
+            const target = event.target;
+            const file = target.files[0];
             if (!file) return;
-            
-            // CRITICAL CHECK FOR GHOST ID
-            if (this.createForm && [6, 7, 8, 9].includes(Number(this.createForm.id))) {
-                 console.error(`CRITICAL: handleFileUpload detected Ghost ID (${this.createForm.id})! Stack trace:`, new Error().stack);
-                 alert(`CRITICAL ERROR: Detected Ghost ID (${this.createForm.id}) during file upload. Stop.`);
-                 return;
-            }
 
             if (file.size > 25 * 1024 * 1024) { // Max 25MB as per requirement (video)
                 ElementPlus.ElMessage.warning('文件大小不能超过25MB');
+                target.value = '';
                 return;
             }
 
@@ -6278,26 +6944,15 @@ const Dashboard = {
             axios.post('/api/common/upload', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             }).then(res => {
-                const parts = path.split('.');
-                let obj = this.createForm;
-                for (let i = 0; i < parts.length - 1; i++) {
-                    if (!obj[parts[i]]) obj[parts[i]] = {};
-                    obj = obj[parts[i]];
-                }
-                obj[parts[parts.length - 1]] = res.data.url;
+                this.setFieldValue(this.createForm, path, res.data.url);
                 
                 // 同步到详情弹窗的 currentProject（如果正在查看同一项目）
                 if (this.showDetailDialog && this.currentProject && this.currentProject.id === this.createForm.id) {
-                    let target = this.currentProject;
-                    for (let i = 0; i < parts.length - 1; i++) {
-                        // 如果中间层不存在，则创建对象以保证赋值成功
-                        if (!target[parts[i]]) target[parts[i]] = {};
-                        target = target[parts[i]];
-                    }
-                    target[parts[parts.length - 1]] = res.data.url;
+                    this.setFieldValue(this.currentProject, path, res.data.url);
                 }
                 
                 ElementPlus.ElMessage.success('上传成功');
+                target.value = '';
                 
                 // Auto-save when editing an existing project
                 if (this.isEditing && this.createForm?.id) {
@@ -6318,7 +6973,9 @@ const Dashboard = {
                         });
                 }
             }).catch(err => {
-                ElementPlus.ElMessage.error('上传失败');
+                console.error("Upload Error:", err, err.response ? err.response.data : "");
+                ElementPlus.ElMessage.error('上传失败: ' + (err.response?.data?.error || err.message));
+                target.value = '';
             });
         },
         addShareholder() {
@@ -6374,12 +7031,8 @@ const Dashboard = {
                 
                 // Determine template type
                 let template_type = 'default';
-                let form_config = {
-                    show_company_info: false,
-                    show_advisor: true,
-                    show_team_members: false,
-                    show_attachments: true
-                };
+                let form_config = { groups: [] };
+                let visibility = { show_company_info: false, show_advisor: true, show_team_members: false, show_attachments: true };
                 if (project.competition_id) {
                     const compId = Number(project.competition_id);
                     let comp = this.competitions.find(c => Number(c.id) === compId);
@@ -6392,18 +7045,18 @@ const Dashboard = {
                     }
                     if (comp) {
                         template_type = comp.template_type;
-                        // Merge form_config from competition (if exists)
                         if (comp.form_config) {
                             try {
                                 const cfg = typeof comp.form_config === 'string' ? JSON.parse(comp.form_config) : comp.form_config;
-                                form_config = {
+                                form_config = cfg && typeof cfg === 'object' ? cfg : { groups: [] };
+                                visibility = {
                                     show_company_info: cfg.show_company_info ?? false,
                                     show_advisor: cfg.show_advisor ?? true,
                                     show_team_members: cfg.show_team_members ?? false,
                                     show_attachments: cfg.show_attachments ?? true
                                 };
                             } catch(e) {
-                                // keep defaults
+                                form_config = { groups: [] };
                             }
                         }
                     }
@@ -6414,6 +7067,12 @@ const Dashboard = {
                         template_type = 'startup';
                     }
                 }
+                if (!form_config || typeof form_config !== 'object') form_config = { groups: [] };
+                if (!Array.isArray(form_config.groups)) form_config.groups = [];
+                form_config.show_company_info = visibility.show_company_info;
+                form_config.show_advisor = visibility.show_advisor;
+                form_config.show_team_members = visibility.show_team_members;
+                form_config.show_attachments = visibility.show_attachments;
                 
                 // Populate createForm
                 this.createForm = {
@@ -6458,6 +7117,7 @@ const Dashboard = {
                 };
                 if (!this.createForm.extra_info) this.createForm.extra_info = {};
                 if (!this.createForm.extra_info.attachments) this.createForm.extra_info.attachments = {};
+                this.ensureCreateFormAdvisors();
                 
                 // Ensure nested objects exist for startup template
                 if (template_type === 'startup') {
