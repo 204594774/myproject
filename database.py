@@ -4,7 +4,7 @@ from werkzeug.security import generate_password_hash
 
 def get_db_connection():
     # Force absolute path to ensure consistency across different execution contexts
-    db_path = r'D:\桌面\new11\database.db'
+    db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database.db')
     print(f"DEBUG: Connecting to DB at {db_path}")
     conn = sqlite3.connect(db_path, timeout=10)
     conn.row_factory = sqlite3.Row
@@ -184,6 +184,7 @@ def init_db():
             content TEXT,
             is_read BOOLEAN DEFAULT 0,
             type TEXT, -- system, project, approval
+            meta TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users (id)
         )
@@ -244,7 +245,7 @@ def init_db():
         # 学校审批者
         ('sch_approver', 'admin123', 'school_approver', '校领导', '', '行政', ''),
         # 评委老师
-        ('judge1', 'admin123', 'judge', '王教授', '计算机学院', '计算机系', '信息学院'),
+        ('judge1', 'admin123', 'judge', '王教授', '计算机学院（人工智能学院）', '计算机系', '信息学院'),
         # 指导老师
         ('teacher1', 'teacher123', 'teacher', '张老师', '信息学院', '计算机系', '信息学院'),
         # 学生

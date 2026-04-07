@@ -8,9 +8,10 @@ class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'your_secret_key')
     DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database.db')
     UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')
+    WATERMARK_SCHOOL_NAME = os.getenv('WATERMARK_SCHOOL_NAME', 'XX大学')
     
-    # 幽灵项目 ID 统一管理
-    GHOST_PROJECT_IDS = {6, 7, 8, 9}
+    # 项目管理相关配置
+    GHOST_PROJECT_IDS = set() # 已清除硬编码的限制 ID
     
     # 角色常量
     ROLES = {

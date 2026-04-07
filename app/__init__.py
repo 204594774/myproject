@@ -1,4 +1,4 @@
-from flask import Flask, Blueprint
+from flask import Flask, Blueprint, make_response
 import os
 from config import get_config
 from flasgger import Swagger
@@ -11,6 +11,9 @@ def create_app():
                 template_folder=os.path.join(os.path.dirname(os.path.dirname(__file__)), 'templates'))
     
     app.config.from_object(config)
+    app.config['TEMPLATES_AUTO_RELOAD'] = True
+    app.jinja_env.auto_reload = True
+    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
     
     # Swagger 文档配置 (Flasgger)
     app.config['SWAGGER'] = {
@@ -36,18 +39,25 @@ def create_app():
     from .projects.views import projects_bp
     from .users.views import users_bp
     from .system.views import system_bp
+    from .process.views import process_template_bp
+    from .reviews.views import reviews_bp
     from .errors.handlers import errors_bp
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(projects_bp)
     app.register_blueprint(users_bp)
     app.register_blueprint(system_bp)
+    app.register_blueprint(process_template_bp)
+    app.register_blueprint(reviews_bp)
     app.register_blueprint(errors_bp)
     
     # 首页路由
     @app.route('/')
     def index():
         from flask import render_template
-        return render_template('index.html')
+        resp = make_response(render_template('index.html'))
+        resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        resp.headers['Pragma'] = 'no-cache'
+        return resp
         
     return app

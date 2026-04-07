@@ -6,209 +6,7 @@
     <title>大学生创新创业项目管理系统</title>
     <!-- Element Plus CSS -->
     <link rel="stylesheet" href="/static/lib/element-plus.index.css" />
-    <style>
-        :root {
-            --primary-color: #409eff;
-            --success-color: #67c23a;
-            --warning-color: #e6a23c;
-            --danger-color: #f56c6c;
-            --info-color: #909399;
-            --text-main: #303133;
-            --text-regular: #606266;
-            --bg-color: #f5f7fa;
-            --card-radius: 8px;
-            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        }
-
-        body {
-            font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
-            background-color: var(--bg-color);
-            margin: 0;
-            padding: 0;
-            color: var(--text-main);
-        }
-
-        [v-cloak] { display: none; }
-        
-        #error-log {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            background: #fef0f0;
-            color: #f56c6c;
-            padding: 10px;
-            z-index: 9999;
-            display: none;
-            border-bottom: 1px solid #fde2e2;
-        }
-
-        /* Login Styling */
-        .login-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background: linear-gradient(135deg, #1c92d2 0%, #f2fcfe 100%);
-            /* background-image: url('https://source.unsplash.com/random/1920x1080/?technology,campus'); Removed to fix ORB error */
-            background-size: cover;
-            background-position: center;
-            position: relative;
-        }
-        .login-container::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(5px);
-        }
-        .login-card {
-            width: 420px;
-            border-radius: 12px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
-            position: relative;
-            z-index: 1;
-            background: rgba(255, 255, 255, 0.95);
-        }
-        .login-card .card-header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .login-card h2 {
-            margin: 0 0 10px;
-            color: #2c3e50;
-            font-weight: 600;
-        }
-        .login-card .subtitle {
-            margin: 0;
-            color: #7f8c8d;
-            font-size: 14px;
-        }
-
-        /* Dashboard & Layout Styling */
-        .app-wrapper {
-            height: 100vh;
-            display: flex;
-        }
-        .sidebar {
-            background-color: #fff;
-            border-right: 1px solid #e6e6e6;
-            display: flex;
-            flex-direction: column;
-            transition: width 0.3s;
-        }
-        .sidebar .logo {
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            font-weight: bold;
-            color: var(--primary-color);
-            border-bottom: 1px solid #f0f0f0;
-            gap: 10px;
-        }
-        .el-menu-vertical {
-            border-right: none !important;
-            flex: 1;
-        }
-        
-        .header {
-            background-color: #fff;
-            border-bottom: 1px solid #e6e6e6;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
-            height: 60px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        }
-        .header-right .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            padding: 5px 10px;
-            border-radius: 4px;
-            transition: background 0.2s;
-        }
-        .header-right .user-info:hover {
-            background: #f5f7fa;
-        }
-        
-        .main-content {
-            padding: 20px;
-            background-color: var(--bg-color);
-            overflow-y: auto;
-        }
-
-        /* Stat Cards */
-        .stat-row {
-            margin-bottom: 20px;
-        }
-        .stat-card {
-            border-radius: var(--card-radius);
-            border: none;
-            box-shadow: var(--card-shadow) !important;
-            transition: transform 0.2s;
-        }
-        .stat-card:hover {
-            transform: translateY(-2px);
-        }
-        .stat-value {
-            font-size: 32px;
-            font-weight: bold;
-            text-align: center;
-            padding: 10px 0;
-            color: var(--text-main);
-        }
-        .stat-value.success { color: var(--success-color); }
-        .stat-value.warning { color: var(--warning-color); }
-
-        /* Tables & Lists */
-        .table-card {
-            border-radius: var(--card-radius);
-            border: none;
-            box-shadow: var(--card-shadow) !important;
-        }
-        .el-table th {
-            background-color: #f5f7fa !important;
-            color: var(--text-regular);
-            font-weight: 600;
-        }
-        .action-bar {
-            background: #fff;
-            padding: 20px;
-            border-radius: var(--card-radius);
-            margin-bottom: 20px;
-            box-shadow: var(--card-shadow);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        /* Modal Customization */
-        .el-dialog {
-            border-radius: 12px !important;
-            overflow: hidden;
-        }
-        .el-dialog__header {
-            background: #f5f7fa;
-            margin-right: 0 !important;
-            padding: 20px !important;
-            border-bottom: 1px solid #eee;
-        }
-        .el-dialog__footer {
-            background: #f5f7fa;
-            border-top: 1px solid #eee;
-            padding: 15px 20px !important;
-        }
-        
-        /* Tag Enhancement */
-        .el-tag {
-            border-radius: 4px;
-        }
-    </style>
+    <link rel="stylesheet" href="/static/css/design-system.css?v=3" />
 
 </head>
 <body>
@@ -221,6 +19,17 @@
 
     <div id="error-log"></div>
     <script>
+        // --- 立即移除加载动画 (防止脚本错误导致白屏) ---
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                var loader = document.getElementById('app-loading');
+                if (loader) {
+                    loader.style.opacity = '0';
+                    setTimeout(function() { loader.style.display = 'none'; }, 500);
+                }
+            }, 1000); // 延时1秒确保资源加载
+        });
+
         window.onerror = function(msg, url, lineNo, columnNo, error) {
             if (typeof msg === 'string' && msg.includes('ResizeObserver')) {
                 return false;
@@ -233,7 +42,9 @@
         window.addEventListener('unhandledrejection', function(event) {
             var errorLog = document.getElementById('error-log');
             errorLog.style.display = 'block';
-            errorLog.innerText = 'Async Error: ' + event.reason;
+            var r = event && event.reason ? event.reason : '';
+            var detail = (r && r.stack) ? r.stack : String(r);
+            errorLog.innerText = 'Async Error: ' + detail;
         });
     </script>
     <div id="app" v-cloak>
@@ -254,6 +65,6 @@
     <script src="/static/lib/echarts.min.js"></script>
     
     <!-- 应用入口 -->
-    <script src="/static/js/app.js?v=50"></script>
+    <script src="/static/js/app.js?v=215"></script>
 </body>
 </html>

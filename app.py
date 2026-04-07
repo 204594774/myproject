@@ -488,7 +488,7 @@ def get_projects():
         params.append(user['real_name'])
     # 系统管理员和项目管理员可以看到所有，或者按需过滤
         
-    query += " AND id NOT IN (6, 7, 8, 9) ORDER BY created_at DESC"
+    query += " ORDER BY created_at DESC"
     
     projects = conn.execute(query, params).fetchall()
     conn.close()
@@ -545,11 +545,50 @@ def create_project():
             if p_type == 'innovation': t_type = 'innovation'
             else: t_type = 'startup'
             
+        
+        # Determine target status based on project type (赛事类不需要导师审批)
+        # 获取项目的模板类型或比赛类型
+        from app.projects.views import resolve_template_name
+        project_dict = {
+            'project_type': p_type,
+            'template_type': t_type,
+            'competition_id': data.get('competition_id')
+        }
+        comp_id = project_dict['competition_id']
+        if comp_id is None or comp_id == '' or comp_id == 0 or comp_id == '0':
+            comp_id = None
+        if comp_id is not None:
+            try:
+                comp_id = int(comp_id)
+            except Exception:
+                return jsonify({'error': '赛事/批次ID无效'}), 400
+            existing = conn.execute(
+                'SELECT id, status FROM projects WHERE created_by = ? AND competition_id = ? ORDER BY id DESC LIMIT 1',
+                (user_id, comp_id)
+            ).fetchone()
+            if existing:
+                return jsonify({
+                    'error': '您已报名/暂存过该赛事/批次，请使用“修改报名/修改”入口编辑，避免重复申报',
+                    'existing_project_id': existing['id'],
+                    'existing_status': existing['status']
+                }), 409
+            comp = conn.execute('SELECT template_type, title FROM competitions WHERE id = ?', (comp_id,)).fetchone()
+            if comp:
+                project_dict['competition_template_type'] = comp['template_type']
+                project_dict['competition_title'] = comp['title']
+        tpl_name = resolve_template_name(project_dict)
+        
+        # 如果是赛事类（大挑、小挑、国创赛、三创赛等），提交后直接进入待审核状态，跳过导师
+        if tpl_name in ['大挑', '国创赛', '小挑', '三创赛常规赛', '三创赛实战赛']:
+            target_status = 'under_review' # 学院/学校可以直接在过程管理里操作，这里可以设为 under_review 或 pending 都不影响过程管理的展示
+        else:
+            target_status = 'pending' # 大创类保留待导师审核
+
         cursor = conn.execute('''
             INSERT INTO projects (
                 title, leader_name, advisor_name, department, college, 
                 project_type, template_type, level, status, year, created_by, abstract, assessment_indicators, competition_id, extra_info, inspiration_source
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             data.get('title'),
             data.get('leader_name', user['real_name']),
@@ -559,11 +598,12 @@ def create_project():
             p_type,
             t_type,
             data.get('level', 'school'),
+            target_status,
             data.get('year', '2025'),
             user_id,
             data.get('abstract', ''),
             data.get('assessment_indicators', ''),
-            data.get('competition_id'), # 关联赛事ID
+            comp_id, # 关联赛事ID
             extra_info_json,
             data.get('inspiration_source')
         ))
@@ -636,8 +676,7 @@ def create_project():
 
 @app.route('/api/projects/<int:project_id>', methods=['GET'])
 def get_project_detail(project_id):
-    if project_id in [6, 7, 8, 9]:
-        return jsonify({'error': '项目不存在'}), 404
+    # REMOVED GHOST_PROJECT_IDS filtering that caused ID 1 to 9 to show as missing
     conn = get_db_connection()
     project = conn.execute('SELECT * FROM projects WHERE id = ?', (project_id,)).fetchone()
     if not project:
@@ -714,8 +753,6 @@ def get_project_detail(project_id):
 
 @app.route('/api/projects/<int:project_id>', methods=['PUT'])
 def update_project(project_id):
-    if project_id in [6, 7, 8, 9]:
-        return jsonify({'error': '项目不存在'}), 404
     print(f"DEBUG: update_project called with id={project_id}")
     try:
         user_id = session.get('user_id')
@@ -753,6 +790,7 @@ def update_project(project_id):
     print(f"DEBUG: Update Payload Keys: {list(data.keys())}")
     if 'title' in data: print(f"DEBUG: New Title: {data['title']}")
     if 'extra_info' in data: print(f"DEBUG: Extra Info Type: {type(data['extra_info'])}")
+    is_draft = bool(data.get('is_draft'))
 
     # Permission checks
     if role == ROLES['STUDENT']:
@@ -798,7 +836,7 @@ def update_project(project_id):
                 return jsonify({'error': '只能修改自己的项目'}), 403
             
         # Student: Check status
-        if project['status'] not in ['pending', 'rejected', 'advisor_approved', 'college_approved']:
+        if project['status'] not in ['draft', 'pending', 'pending_teacher', 'pending_college', 'rejected', 'advisor_approved', 'college_approved', 'pending_advisor_review', 'to_modify']:
                 conn.close()
                 return jsonify({'error': '当前状态无法修改'}), 400
     
@@ -809,11 +847,27 @@ def update_project(project_id):
     extra_info_json = json.dumps(data.get('extra_info', {}))
     
     try:
+        new_competition_id = project['competition_id']
+        if 'competition_id' in data:
+            v = data.get('competition_id')
+            if v is None or v == '' or v == 0 or v == '0':
+                new_competition_id = None
+            else:
+                try:
+                    new_competition_id = int(v)
+                except Exception:
+                    conn.close()
+                    return jsonify({'error': '赛事/批次ID无效'}), 400
+
         # Determine new status
         new_status = project['status']
         if role == ROLES['STUDENT']:
-            # Student edits trigger re-submission logic
-            new_status = 'pending'
+            if is_draft:
+                new_status = 'draft'
+            else:
+                new_status = 'pending'
+                if data.get('project_type') == 'challenge_cup' or ('挑战杯' in str(data.get('title', ''))):
+                    new_status = 'pending_advisor_review'
             if project['status'] == 'school_approved':
                 new_status = 'school_approved'
         # Approver edits keep the same status
@@ -822,7 +876,7 @@ def update_project(project_id):
             UPDATE projects SET 
                 title=?, leader_name=?, advisor_name=?, department=?, college=?,
                 project_type=?, level=?, year=?, abstract=?, assessment_indicators=?,
-                extra_info=?, status=?
+                competition_id=?, extra_info=?, status=?
             WHERE id=?
         ''', (
             data.get('title'),
@@ -835,6 +889,7 @@ def update_project(project_id):
             data.get('year'),
             data.get('abstract'),
             data.get('assessment_indicators'),
+            new_competition_id,
             extra_info_json,
             new_status,
             project_id
@@ -928,8 +983,6 @@ def update_project(project_id):
 
 @app.route('/api/projects/<int:project_id>', methods=['DELETE'])
 def delete_project(project_id):
-    if project_id in [6, 7, 8, 9]:
-        return jsonify({'error': '项目不存在'}), 404
     role = session.get('role')
     if role not in [ROLES['SYSTEM_ADMIN'], ROLES['PROJECT_ADMIN']]:
         return jsonify({'error': '无权限'}), 403
@@ -949,13 +1002,14 @@ def delete_project(project_id):
         conn.close()
 @app.route('/api/projects/<int:project_id>/audit', methods=['PUT'])
 def audit_project(project_id):
-    if project_id in [6, 7, 8, 9]:
-        return jsonify({'error': '项目不存在'}), 404
     print(f"DEBUG: audit_project called with id={project_id}")
     role = session.get('role')
     data = request.json
     action = data.get('action') # 'approve', 'reject'
     feedback = data.get('feedback', '')
+    
+    if not feedback or not feedback.strip():
+        return jsonify({'error': '审批意见为必填项'}), 400
     
     conn = get_db_connection()
     project = conn.execute('SELECT * FROM projects WHERE id = ?', (project_id,)).fetchone()
@@ -974,10 +1028,6 @@ def audit_project(project_id):
             conn.close()
             return jsonify({'error': f'当前状态({project["status"]})无法进行指导老师审核'}), 400
         
-        if action != 'approve' and not feedback:
-            conn.close()
-            return jsonify({'error': '驳回必须填写理由'}), 400
-            
         if project['status'] == 'pending':
             new_status = 'advisor_approved' if action == 'approve' else 'rejected'
         elif project['status'] == 'midterm_submitted':
@@ -1016,18 +1066,11 @@ def audit_project(project_id):
         
         # 1. 立项阶段
         if project['status'] in ['pending', 'advisor_approved']:
-            if action != 'approve' and not feedback:
-                conn.close()
-                return jsonify({'error': '驳回必须填写理由'}), 400
             # CHANGE: College Approve -> under_review (Wait for Expert Review)
             new_status = 'under_review' if action == 'approve' else 'rejected'
             
         # 2. 中期阶段
         elif project['status'] in ['midterm_submitted', 'midterm_advisor_approved']:
-             if action != 'approve' and not feedback:
-                conn.close()
-                return jsonify({'error': '驳回必须填写理由'}), 400
-             
              # Check Project Level
              level = project.get('project_level', 'school')
              if level in ['national', 'provincial']:
@@ -1041,9 +1084,6 @@ def audit_project(project_id):
 
         # 3. 结项阶段
         elif project['status'] in ['conclusion_submitted', 'conclusion_advisor_approved']:
-             if action != 'approve' and not feedback:
-                conn.close()
-                return jsonify({'error': '驳回必须填写理由'}), 400
              # CHANGE: Conclusion -> under_final_review
              new_status = 'under_final_review' if action == 'approve' else 'conclusion_rejected'
              
@@ -2061,8 +2101,23 @@ def get_competitions():
     res = [dict(row) for row in competitions]
     
     if user_id and session.get('role') == ROLES['STUDENT']:
-        user_projects = conn.execute('SELECT competition_id, id, status FROM projects WHERE created_by = ? AND competition_id IS NOT NULL AND id NOT IN (6, 7, 8, 9)', (user_id,)).fetchall()
-        project_map = {row['competition_id']: {'id': row['id'], 'status': row['status']} for row in user_projects}
+        user_projects = conn.execute(
+            '''
+            SELECT competition_id, id, status
+            FROM projects
+            WHERE created_by = ? AND competition_id IS NOT NULL
+            ORDER BY id DESC
+            ''',
+            (user_id,)
+        ).fetchall()
+        project_map = {}
+        for row in user_projects:
+            cid = row['competition_id']
+            if cid is None:
+                continue
+            if cid in project_map:
+                continue
+            project_map[cid] = {'id': row['id'], 'status': row['status']}
         
         for comp in res:
             if comp['id'] in project_map:

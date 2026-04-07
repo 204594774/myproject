@@ -11,6 +11,10 @@ export default {
                     <el-icon><DataLine /></el-icon>
                     <span>工作台</span>
                 </el-menu-item>
+                <el-menu-item index="/legacy">
+                    <el-icon><Collection /></el-icon>
+                    <span>往届项目经验库</span>
+                </el-menu-item>
                 <el-menu-item index="/profile">
                     <el-icon><User /></el-icon>
                     <span>个人中心</span>

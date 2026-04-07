@@ -76,6 +76,11 @@ export default {
                             <el-option label="创业训练" value="entrepreneurship_training"></el-option>
                             <el-option label="创业实践" value="entrepreneurship_practice"></el-option>
                         </el-select>
+                        <el-select v-if="['system_admin', 'project_admin', 'school_approver', 'college_approver'].includes(user.role)" v-model="filters.level" placeholder="级别" clearable style="width: 100px">
+                            <el-option label="校级" value="school"></el-option>
+                            <el-option label="省级" value="provincial"></el-option>
+                            <el-option label="国家级" value="national"></el-option>
+                        </el-select>
                         <el-input v-model="filters.keyword" placeholder="搜索项目/负责人" prefix-icon="Search" style="width: 150px" clearable></el-input>
                         
                         <el-button-group v-if="['system_admin', 'project_admin', 'school_approver', 'college_approver'].includes(user.role)">
@@ -94,9 +99,11 @@ export default {
                 </div>
             </template>
             <el-table :data="filteredProjects" style="width: 100%" v-loading="loading" :header-cell-style="{background:'#f5f7fa',color:'#606266'}">
-                <el-table-column prop="title" label="项目名称" min-width="200">
+                <el-table-column prop="title" label="项目名称" width="320">
                     <template #default="scope">
-                        <span style="font-weight: 500; color: var(--primary-color);">{{ scope.row.title }}</span>
+                        <el-tooltip :content="scope.row.title" placement="top" :show-after="300">
+                            <span class="project-name" @click="viewDetails(scope.row.id)">{{ scope.row.title }}</span>
+                        </el-tooltip>
                         <div style="font-size: 12px; color: #909399;">ID: {{ scope.row.id }} | {{ scope.row.year }}</div>
                     </template>
                 </el-table-column>
@@ -147,7 +154,13 @@ export default {
                          </div>
                      </template>
                      <el-table :data="reviewTasks" style="width: 100%" v-loading="loadingReviews">
-                         <el-table-column prop="title" label="项目名称"></el-table-column>
+                         <el-table-column prop="title" label="项目名称" width="320">
+                             <template #default="scope">
+                                 <el-tooltip :content="scope.row.title" placement="top" :show-after="300">
+                                     <span class="project-name" @click="openReviewDialog(scope.row)">{{ scope.row.title }}</span>
+                                 </el-tooltip>
+                             </template>
+                         </el-table-column>
                          <el-table-column prop="project_type" label="类型"></el-table-column>
                          <el-table-column prop="status" label="任务状态">
                              <template #default="scope">
@@ -214,7 +227,7 @@ export default {
                         <h3 style="margin: 0 0 0 10px; color: #303133;">{{ auditAction === 'approved' ? '通过审批' : '驳回申请' }}</h3>
                     </div>
                     <p style="color: #606266; font-size: 14px; margin-bottom: 10px;">您即将<strong>{{ auditAction === 'approved' ? '通过' : '驳回' }}</strong>该项目</p>
-                    <el-input v-model="auditFeedback" :placeholder="auditAction === 'approved' ? '请输入审批意见（可选）' : '请输入驳回理由（必填）'" type="textarea" :rows="3"></el-input>
+                    <el-input v-model="auditFeedback" placeholder="请输入审批意见（必填）" type="textarea" :rows="3"></el-input>
                     <div style="margin-top: 15px; text-align: right;">
                          <el-button @click="showDetailDialog = false">取消</el-button>
                          <el-button :type="auditAction === 'approved' ? 'success' : 'danger'" @click="confirmAudit" :loading="submitting">确认提交</el-button>
@@ -263,13 +276,22 @@ export default {
                     </el-form>
                 </div>
 
-                <!-- 状态步骤条 -->
-                <el-steps :active="getStepActive(currentProject.status)" finish-status="success" align-center style="margin-bottom: 30px;">
+                <!-- 动态过程步骤条 -->
+                <el-steps v-if="projectProcess?.process_structure?.length" :active="getProcessActiveStep()" finish-status="success" align-center style="margin-bottom: 30px;">
+                    <el-step v-for="node in projectProcess.process_structure" :key="node" :title="node">
+                        <template #description>
+                            <span style="font-size: 11px;">{{ projectProcess.node_current_status[node] || '待触发' }}</span>
+                        </template>
+                    </el-step>
+                </el-steps>
+
+                <!-- 传统状态步骤条 (作为回退) -->
+                <el-steps v-else :active="getStepActive(currentProject.status)" finish-status="success" align-center style="margin-bottom: 30px;">
                     <el-step title="提交申请"></el-step>
-                    <el-step title="导师审核"></el-step>
-                    <el-step title="学院审批"></el-step>
-                    <el-step title="学校审批"></el-step>
-                    <el-step title="立项完成"></el-step>
+                    <el-step :title="currentProject.project_type === 'challenge_cup' ? '指导教师初审' : '导师审核'"></el-step>
+                    <el-step :title="currentProject.project_type === 'challenge_cup' ? '学院赛' : '学院审批'"></el-step>
+                    <el-step :title="currentProject.project_type === 'challenge_cup' ? '校赛' : '学校审批'"></el-step>
+                    <el-step :title="currentProject.project_type === 'challenge_cup' ? '省赛/国赛' : '立项完成'"></el-step>
                 </el-steps>
 
                 <el-descriptions :column="2" border title="基本信息" size="large">
@@ -280,7 +302,7 @@ export default {
                         <el-tag :type="getStatusType(currentProject.status)">{{ getStatusTextForRow(currentProject) }}</el-tag>
                     </el-descriptions-item>
                     <el-descriptions-item label="学院">{{ currentProject.college }}</el-descriptions-item>
-                    <el-descriptions-item label="类型">{{ currentProject.project_type === 'innovation' ? '创新训练' : (currentProject.project_type === 'entrepreneurship_training' ? '创业训练' : '创业实践') }}</el-descriptions-item>
+                    <el-descriptions-item label="类型">{{ currentProject.project_type === 'innovation' ? '创新训练' : (currentProject.project_type === 'entrepreneurship_training' ? '创业训练' : (currentProject.project_type === 'challenge_cup' ? '挑战杯' : '创业实践')) }}</el-descriptions-item>
                 </el-descriptions>
                 <el-descriptions :column="2" border class="mt-2">
                     <el-descriptions-item label="项目ID">{{ currentProject.id }}</el-descriptions-item>
@@ -362,17 +384,37 @@ export default {
                     </el-table>
                 </div>
 
-                <div v-if="currentProject.reviews && currentProject.reviews.length" class="mt-4">
-                    <h4>评审记录</h4>
-                    <el-table :data="currentProject.reviews" border size="small">
-                        <el-table-column prop="judge_name" label="评委"></el-table-column>
-                        <el-table-column prop="score" label="评分"></el-table-column>
-                        <el-table-column prop="comment" label="评语"></el-table-column>
+                <!-- 过程管理详情 (管理岗可见) -->
+                <div v-if="projectProcess?.process_structure?.length && ['school_approver', 'project_admin', 'system_admin', 'college_approver'].includes(user.role)" class="mt-4">
+                    <el-divider content-position="left">过程节点管理</el-divider>
+                    <el-table :data="projectProcess.process_structure" border size="small">
+                        <el-table-column label="节点名称">
+                            <template #default="scope">
+                                <span style="font-weight: bold;">{{ scope.row }}</span>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="当前状态">
+                            <template #default="scope">
+                                <el-tag size="small" :type="projectProcess.node_current_status[scope.row] ? 'success' : 'info'">
+                                    {{ projectProcess.node_current_status[scope.row] || '待触发' }}
+                                </el-tag>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="审核意见" prop="comment">
+                            <template #default="scope">
+                                <span style="font-size: 12px; color: #666;">{{ projectProcess.node_comments[scope.row] || '-' }}</span>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="操作" width="120" v-if="canEditProcessNode()">
+                            <template #default="scope">
+                                <el-button size="small" type="primary" link @click="openProcessEdit(scope.row)">录入/更新</el-button>
+                            </template>
+                        </el-table-column>
                     </el-table>
                 </div>
 
-                <div v-if="currentProject.files && currentProject.files.length" class="mt-4">
-                    <h4>项目材料</h4>
+                <div v-if="currentProject.files && currentProject.files.length && ['innovation', 'entrepreneurship_training', 'entrepreneurship_practice'].includes(currentProject.project_type)" class="mt-4">
+                    <h4>项目过程材料</h4>
                     <el-table :data="currentProject.files" border size="small">
                         <el-table-column prop="file_type" label="类型">
                             <template #default="scope">
@@ -430,6 +472,30 @@ export default {
                 </div>
             </div>
         </el-dialog>
+
+        <!-- 过程节点录入/更新对话框 -->
+        <el-dialog v-model="showProcessEditDialog" :title="'节点管理: ' + processEditNode" width="500px">
+            <el-form :model="processEditForm" label-width="100px">
+                <el-form-item label="节点名称">
+                    <el-tag>{{ processEditNode }}</el-tag>
+                </el-form-item>
+                <el-form-item label="更新状态" required>
+                    <el-select v-model="processEditForm.current_status" placeholder="请选择状态" style="width: 100%">
+                        <el-option v-for="opt in projectProcess?.node_options[processEditNode]" :key="opt" :label="opt" :value="opt"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="备注/意见" required>
+                    <el-input type="textarea" v-model="processEditForm.comment" :rows="3" placeholder="请输入审批意见或备注"></el-input>
+                </el-form-item>
+                <el-form-item label="获奖等级" v-if="['省赛', '国赛'].includes(processEditNode)">
+                    <el-input v-model="processEditForm.award_level" placeholder="例: 一等奖"></el-input>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="showProcessEditDialog = false">取消</el-button>
+                <el-button type="primary" @click="submitProcessUpdate">提交</el-button>
+            </template>
+        </el-dialog>
     </div>
     `,
     props: ['user'],
@@ -448,6 +514,7 @@ export default {
                 description: ''
             },
             currentProject: null,
+            projectProcess: null,
             currentNotice: null,
             latestAnnouncement: null,
             isAuditing: false,
@@ -464,6 +531,13 @@ export default {
                 }
             },
             statsData: {},
+            showProcessEditDialog: false,
+            processEditNode: '',
+            processEditForm: {
+                current_status: '',
+                comment: '',
+                award_level: ''
+            },
             reviewTasks: [],
             loadingReviews: false,
             systemLogs: [],
@@ -471,6 +545,7 @@ export default {
                 year: '',
                 status: '',
                 type: '',
+                level: '',
                 keyword: ''
             }
         }
@@ -491,14 +566,20 @@ export default {
                         // Complex logic: what is pending for THIS user?
                         if (!this.canUserAudit(p)) return false;
                     } else if (this.filters.status === 'approved') {
-                        if (!['rated', 'finished', 'midterm_approved'].includes(p.status)) return false;
+                        if (!this.isApprovedStatus(p.status)) return false;
                     } else if (this.filters.status === 'rejected') {
-                        if (!p.status.includes('rejected')) return false;
+                        if (!this.isRejectedStatus(p.status)) return false;
                     }
                 }
                 
                 // Type Filter
                 if (this.filters.type && p.project_type !== this.filters.type) return false;
+                
+                // Level Filter
+                if (this.filters.level) {
+                    const lv = this.normalizeLevel(p.level || p.project_level || p.current_level || '');
+                    if (lv !== this.filters.level) return false;
+                }
                 
                 // Keyword Filter
                 if (this.filters.keyword) {
@@ -521,7 +602,7 @@ export default {
             return this.projects.filter(p => this.canUserAudit(p)).length;
         },
         approvedCount() {
-            return this.projects.filter(p => ['rated', 'finished', 'midterm_approved'].includes(p.status)).length;
+            return this.projects.filter(p => this.isApprovedStatus(p.status)).length;
         }
     },
     mounted() {
@@ -548,8 +629,8 @@ export default {
         },
         async initCharts() {
             try {
-                const res = await axios.get('/api/system/stats');
-                this.statsData = res.data;
+                const res = await axios.get('/api/stats');
+                this.statsData = (res.data && res.data.data) ? res.data.data : (res.data || {});
                 
                 this.$nextTick(() => {
                     // Status Chart
@@ -560,7 +641,7 @@ export default {
                         series: [{
                             type: 'pie',
                             radius: '50%',
-                            data: this.statsData.project_stats.map(s => ({ name: this.getStatusText(s.status), value: s.count }))
+                            data: (this.statsData.project_stats || []).map(s => ({ name: this.getStatusText(s.status), value: s.count }))
                         }]
                     });
                     
@@ -569,11 +650,11 @@ export default {
                     collegeChart.setOption({
                         title: { text: '学院申报分布' },
                         tooltip: { trigger: 'axis' },
-                        xAxis: { type: 'category', data: this.statsData.college_stats.map(s => s.college) },
+                        xAxis: { type: 'category', data: (this.statsData.college_stats || []).map(s => s.college) },
                         yAxis: { type: 'value' },
                         series: [{
                             type: 'bar',
-                            data: this.statsData.college_stats.map(s => s.count)
+                            data: (this.statsData.college_stats || []).map(s => s.count)
                         }]
                     });
                     
@@ -585,7 +666,7 @@ export default {
                         series: [{
                             type: 'pie',
                             radius: ['40%', '70%'],
-                            data: this.statsData.type_stats.map(s => ({ 
+                            data: (this.statsData.type_stats || []).map(s => ({ 
                                 name: s.project_type === 'innovation' ? '创新训练' : (s.project_type === 'entrepreneurship_training' ? '创业训练' : '创业实践'), 
                                 value: s.count 
                             }))
@@ -603,13 +684,13 @@ export default {
             const status = project.status;
             
             if (role === 'teacher') {
-                return ['pending', 'midterm_submitted', 'conclusion_submitted'].includes(status);
+                return ['pending_teacher', 'pending', 'pending_advisor_review', 'midterm_submitted', 'conclusion_submitted'].includes(status);
             }
             if (role === 'college_approver') {
-                return ['advisor_approved', 'midterm_advisor_approved', 'conclusion_advisor_approved'].includes(status);
+                return ['pending_college', 'advisor_approved', 'midterm_advisor_approved', 'conclusion_advisor_approved'].includes(status);
             }
             if (role === 'school_approver') {
-                return ['college_approved', 'midterm_college_approved', 'conclusion_college_approved'].includes(status);
+                return ['college_recommended', 'pending_college', 'college_approved', 'midterm_college_approved', 'conclusion_college_approved'].includes(status);
             }
             return false;
         },
@@ -617,9 +698,9 @@ export default {
             this.loading = true;
             try {
                 const res = await axios.get(`/api/projects?t=${new Date().getTime()}`);
-                // Filter out Ghost IDs (6, 7, 8, 9)
+                // 清除硬编码的 ID 过滤 (6, 7, 8, 9)
                 this.projects = Array.isArray(res.data) 
-                    ? res.data.filter(p => p && p.id && !isNaN(Number(p.id)) && Number(p.id) > 0 && ![6, 7, 8, 9].includes(Number(p.id))) 
+                    ? res.data.filter(p => p && p.id && !isNaN(Number(p.id)) && Number(p.id) > 0) 
                     : [];
             } catch (error) {
                 console.error(error);
@@ -643,18 +724,23 @@ export default {
                 this.createForm = { title: '', description: '' };
                 this.fetchProjects();
             } catch (error) {
-                ElementPlus.ElMessage.error(error.response?.data?.error || '提交失败');
+                ElementPlus.ElMessage.error(error && error.message ? error.message : '提交失败');
             } finally {
                 this.submitting = false;
             }
         },
         async viewDetails(id) {
             try {
-                const res = await axios.get(`/api/projects/${id}?t=${new Date().getTime()}`);
-                this.currentProject = res.data;
+                const [projRes, procRes] = await Promise.all([
+                    axios.get(`/api/projects/${id}?t=${new Date().getTime()}`),
+                    axios.get(`/api/projects/${id}/process?t=${new Date().getTime()}`)
+                ]);
+                this.currentProject = projRes.data;
+                this.projectProcess = procRes.data;
                 this.isAuditing = false;
                 this.showDetailDialog = true;
             } catch(e) {
+                console.error(e);
                 ElementPlus.ElMessage.error('获取详情失败');
             }
         },
@@ -668,27 +754,115 @@ export default {
         async confirmAudit() {
             this.submitting = true;
             try {
-                if (this.auditAction === 'rejected' && !this.auditFeedback) {
-                    ElementPlus.ElMessage.warning('驳回必须填写理由');
-                    this.submitting = false;
-                    return;
+                const action = this.auditAction === 'approved' ? 'approve' : 'reject';
+                const feedback = String(this.auditFeedback || '').trim();
+                const st = String(this.currentProject?.status || '').trim();
+                if (st === 'pending_advisor_review') {
+                    if (!feedback) {
+                        ElementPlus.ElMessage.warning('审批意见为必填项');
+                        this.submitting = false;
+                        return;
+                    }
+                    await axios.post(`/api/projects/${this.currentProject.id}/advisor_review`, {
+                        status: action === 'approve' ? 'pass' : 'reject',
+                        opinion: feedback
+                    });
+                    ElementPlus.ElMessage.success('初审操作成功');
+                } else {
+                    if (action === 'reject' && !feedback) {
+                        ElementPlus.ElMessage.warning('驳回时审批意见为必填项');
+                        this.submitting = false;
+                        return;
+                    }
+                    await axios.put(`/api/projects/${this.currentProject.id}/audit`, {
+                        action,
+                        feedback
+                    });
+                    ElementPlus.ElMessage.success('审批成功');
                 }
-                await axios.put(`/api/projects/${this.currentProject.id}/audit`, {
-                    action: this.auditAction === 'approved' ? 'approve' : 'reject',
-                    feedback: this.auditFeedback
-                });
-                ElementPlus.ElMessage.success('审批成功');
                 this.showDetailDialog = false;
                 this.fetchProjects();
             } catch (error) {
-                ElementPlus.ElMessage.error(error.response?.data?.error || '操作失败');
+                const msg = (error && error.response && error.response.data && (error.response.data.message || error.response.data.error))
+                    || (error && error.message)
+                    || '操作失败';
+                ElementPlus.ElMessage.error(msg);
             } finally {
                 this.submitting = false;
+            }
+        },
+        getProcessActiveStep() {
+            if (!this.projectProcess || !this.projectProcess.process_structure) return 0;
+            const structure = this.projectProcess.process_structure;
+            const statuses = this.projectProcess.node_current_status;
+            
+            let lastActive = 0;
+            for (let i = 0; i < structure.length; i++) {
+                const node = structure[i];
+                const status = statuses[node];
+                
+                if (status && status !== '待触发' && !status.includes('待评审') && !status.includes('待初审')) {
+                    lastActive = i + 1;
+                } else if (status && (status.includes('待评审') || status.includes('待初审'))) {
+                    return i;
+                }
+            }
+            return lastActive;
+        },
+        canEditProcessNode() {
+            if (!this.user) return false;
+            const role = this.user.role;
+            // 学校管理员和系统管理员可以编辑所有节点（省赛/国赛录入）
+            if (['school_approver', 'system_admin', 'project_admin'].includes(role)) return true;
+            // 学院管理员可以编辑特定的初级节点
+            if (role === 'college_approver') return true; 
+            return false;
+        },
+        openProcessEdit(nodeName) {
+            this.processEditNode = nodeName;
+            this.processEditForm = {
+                current_status: this.projectProcess.node_current_status[nodeName] || '',
+                comment: this.projectProcess.node_comments[nodeName] || '',
+                award_level: ''
+            };
+            this.showProcessEditDialog = true;
+        },
+        async submitProcessUpdate() {
+            if (!this.processEditForm.current_status) {
+                ElementPlus.ElMessage.warning('请选择状态');
+                return;
+            }
+            if (!this.processEditForm.comment) {
+                ElementPlus.ElMessage.warning('审批意见为必填项');
+                return;
+            }
+            
+            try {
+                await axios.put(`/api/projects/${this.currentProject.id}/process`, {
+                    node_name: this.processEditNode,
+                    ...this.processEditForm
+                });
+                ElementPlus.ElMessage.success('更新成功');
+                this.showProcessEditDialog = false;
+                // 刷新详情
+                await this.viewDetails(this.currentProject.id);
+            } catch(e) {
+                console.error(e);
+                ElementPlus.ElMessage.error(e.response?.data?.message || e.response?.data?.error || e?.message || '更新失败');
             }
         },
         getStatusType(status) {
             const map = {
                 'pending': 'warning',
+                'pending_teacher': 'warning',
+                'pending_college': 'warning',
+                'reviewing': 'warning',
+                'college_recommended': 'primary',
+                'approved': 'success',
+                'pending_advisor_review': 'warning',
+                'college_review': 'warning',
+                'school_review': 'warning',
+                'to_modify': 'danger',
                 'advisor_approved': 'primary',
                 'college_approved': 'primary',
                 'school_approved': 'info',
@@ -703,6 +877,7 @@ export default {
                 'conclusion_advisor_approved': 'primary',
                 'conclusion_college_approved': 'primary',
                 'finished': 'success',
+                'finished_national_award': 'success',
                 'conclusion_rejected': 'danger'
             };
             return map[status] || 'info';
@@ -710,6 +885,15 @@ export default {
         getStatusText(status) {
             const map = {
                 'pending': '待导师审核',
+                'pending_teacher': '待导师审核',
+                'pending_college': '待学院审核',
+                'reviewing': '学院评委盲评中',
+                'college_recommended': '学院评审完成',
+                'approved': '校级通过（公开）',
+                'pending_advisor_review': '待指导教师初审',
+                'college_review': '待评审（学院赛）',
+                'school_review': '待评审（校赛）',
+                'to_modify': '待修改',
                 'advisor_approved': '待学院审批',
                 'college_approved': '待学校审批',
                 'school_approved': '待评审',
@@ -724,16 +908,35 @@ export default {
                 'conclusion_advisor_approved': '结项-待学院审核',
                 'conclusion_college_approved': '结项-待学校审核',
                 'finished': '已结项',
+                'finished_national_award': '已结项·国赛获奖',
                 'conclusion_rejected': '结项-已驳回'
             };
             return map[status] || status;
         },
+        normalizeLevel(v) {
+            const raw = String(v || '').trim();
+            const s = raw.toLowerCase();
+            if (!s) return '';
+            if (['school', '校级', '院级'].includes(s) || raw === '校级') return 'school';
+            if (['provincial', 'province', '省级'].includes(s) || raw === '省级' || raw === '省赛获奖') return 'provincial';
+            if (['national', 'country', '国家级'].includes(s) || raw === '国家级' || raw === '国赛获奖') return 'national';
+            return s;
+        },
+        isApprovedStatus(status) {
+            const s = String(status || '').trim();
+            return ['approved', 'school_approved', 'rated', 'midterm_approved', 'finished', 'finished_national_award'].includes(s);
+        },
+        isRejectedStatus(status) {
+            const s = String(status || '').trim();
+            if (!s) return false;
+            return s === 'rejected' || s.endsWith('_rejected') || s.endsWith('_failed') || s.includes('failed');
+        },
         getStepActive(status) {
             const s = status;
-            if (['pending'].includes(s)) return 1;
-            if (['advisor_approved'].includes(s)) return 2;
-            if (['college_approved'].includes(s)) return 3;
-            if (['school_approved'].includes(s)) return 4;
+            if (['pending_teacher', 'pending', 'pending_advisor_review'].includes(s)) return 1;
+            if (['pending_college', 'advisor_approved', 'college_review'].includes(s)) return 2;
+            if (['reviewing', 'college_approved', 'school_review', 'college_recommended'].includes(s)) return 3;
+            if (['approved', 'school_approved'].includes(s)) return 4;
             if (['rated', 'finished'].includes(s) || (s && (s.startsWith('midterm') || s.startsWith('conclusion')))) return 5;
             return 0;
         },

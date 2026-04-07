@@ -158,34 +158,43 @@ presets = [
             "form_config": {
                 "groups": [
                     {
-                        "title": "项目基础信息",
+                        "title": "项目基础信息区",
                         "fields": [
                             {"key": "title", "label": "项目名称", "type": "text", "required": True, "system": True},
                             {"key": "project_type", "label": "项目类型", "type": "select", "required": True, "system": True, "options": [{"label": "创新训练", "value": "innovation"}]},
                             {"key": "extra_info.duration", "label": "研究周期", "type": "select", "required": True, "options": [{"label": "1年", "value": "1"}, {"label": "2年", "value": "2"}]},
-                            {"key": "college", "label": "所属学院", "type": "select", "required": True, "system": True, "options": []}
+                            {"key": "college", "label": "所属学院", "type": "select", "required": True, "system": True, "options": []},
+                            {"key": "extra_info.topic_source", "label": "选题来源", "type": "select", "required": True, "options": [{"label": "自主选题", "value": "自主选题"}, {"label": "教师科研", "value": "教师科研"}, {"label": "社会委托", "value": "社会委托"}, {"label": "毕设选题", "value": "毕设选题"}, {"label": "学院发布", "value": "学院发布"}, {"label": "揭榜挂帅", "value": "揭榜挂帅"}]},
+                            {"key": "extra_info.is_jiebang", "label": "是否“揭榜挂帅”专项", "type": "radio", "required": True, "options": [{"label": "是", "value": "是"}, {"label": "否", "value": "否"}]},
+                            {"key": "extra_info.is_key_support_candidate", "label": "重点支持项目", "type": "radio", "required": False, "options": [{"label": "是", "value": "是"}, {"label": "否", "value": "否"}], "show_if": {"key": "extra_info.college_recommend_rank", "values": [1]}}
                         ]
                     },
                     {
-                        "title": "核心内容",
+                        "title": "核心内容区",
                         "fields": [
                             {"key": "abstract", "label": "项目简介", "type": "richtext", "required": True, "system": True},
                             {"key": "extra_info.innovation_points", "label": "创新点描述", "type": "richtext", "required": True},
-                            {"key": "extra_info.expected_outcomes", "label": "预期成果", "type": "checkbox", "required": True, "options": [{"label": "论文", "value": "paper"}, {"label": "专利", "value": "patent"}, {"label": "软著", "value": "software"}, {"label": "实物", "value": "product"}, {"label": "调研报告", "value": "report"}]}
+                            {"key": "extra_info.expected_outcomes", "label": "预期成果", "type": "checkbox", "required": True, "options": [{"label": "论文", "value": "paper"}, {"label": "专利", "value": "patent"}, {"label": "软著", "value": "software"}, {"label": "实物", "value": "product"}, {"label": "调研报告", "value": "report"}]},
+                            {"key": "extra_info.research_plan", "label": "研究方案与技术路线", "type": "richtext", "required": True},
+                            {"key": "extra_info.implementation_conditions", "label": "实施条件", "type": "richtext", "required": True}
                         ]
                     },
                     {
-                        "title": "经费与团队",
+                        "title": "指导教师信息",
+                        "fields": []
+                    },
+                    {
+                        "title": "经费与团队区",
                         "fields": [
                             {"key": "extra_info.budget", "label": "经费预算", "type": "table", "required": True},
-                            {"key": "advisor_name", "label": "指导教师", "type": "text", "required": True, "system": True},
-                            {"key": "members", "label": "团队成员", "type": "table", "required": True, "system": True}
+                            {"key": "members", "label": "团队成员", "type": "table", "required": True, "system": True, "columns": [{"label": "姓名", "key": "name", "width": 90}, {"label": "学号", "key": "student_id", "width": 120}, {"label": "年级", "key": "grade", "width": 90}, {"label": "专业", "key": "major", "width": 120}, {"label": "学院", "key": "college", "width": 120}, {"label": "联系方式", "key": "contact", "width": 140}]}
                         ]
                     },
                     {
-                        "title": "附件材料",
+                        "title": "附件材料区",
                         "fields": [
-                            {"key": "extra_info.attachments.application_doc", "label": "申报书", "type": "file", "required": True, "placeholder": "PDF格式"}
+                            {"key": "extra_info.attachments.application_doc", "label": "申报书", "type": "file", "required": True, "placeholder": "PDF格式"},
+                            {"key": "extra_info.attachments.stage_achievement", "label": "已有阶段性成果", "type": "file", "required": True, "placeholder": "可选；重点支持项目必填", "show_if": {"key": "extra_info.is_key_support_candidate", "values": ["是"]}}
                         ]
                     }
                 ]
@@ -324,6 +333,10 @@ presets = [
                         ]
                     },
                     {
+                        "title": "指导教师信息",
+                        "fields": []
+                    },
+                    {
                         "title": "核心内容",
                         "fields": [
                             {"key": "abstract", "label": "项目简介", "type": "richtext", "required": True, "system": True},
@@ -335,8 +348,7 @@ presets = [
                         "title": "财务与团队",
                         "fields": [
                             {"key": "extra_info.budget", "label": "经费预算", "type": "table", "required": True},
-                            {"key": "advisor_name", "label": "指导教师", "type": "text", "required": True, "system": True},
-                            {"key": "members", "label": "团队成员", "type": "table", "required": True, "system": True},
+                            {"key": "members", "label": "团队成员", "type": "table", "required": True, "system": True, "columns": [{"label": "姓名", "key": "name", "width": 90}, {"label": "学号", "key": "student_id", "width": 120}, {"label": "年级", "key": "grade", "width": 90}, {"label": "专业", "key": "major", "width": 120}, {"label": "学院", "key": "college", "width": 120}, {"label": "联系方式", "key": "contact", "width": 140}]},
                             {"key": "extra_info.equity_structure", "label": "股权结构", "type": "table", "required": False}
                         ]
                     },
@@ -494,4 +506,3 @@ if start_idx != -1 and end_idx != -1:
     print("Updated app.js successfully.")
 else:
     print(f"Failed. start_idx={start_idx}, end_idx={end_idx}")
-

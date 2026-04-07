@@ -2,14 +2,23 @@ const FIELD_LIBRARY = [
     { label: '项目名称', key: 'title', type: 'text', required: true, system: true, placeholder: '请输入项目名称' },
     { label: '项目类型', key: 'project_type', type: 'select', required: true, system: true, options: [], placeholder: '请选择项目类型' },
     { label: '研究周期', key: 'extra_info.duration', type: 'select', required: true, options: [{label:'1年',value:'1'}, {label:'2年',value:'2'}], placeholder: '请选择研究周期' },
+    { label: '选题来源', key: 'extra_info.topic_source', type: 'select', required: true, options: [{label:'自主选题',value:'自主选题'},{label:'教师科研',value:'教师科研'},{label:'社会委托',value:'社会委托'},{label:'毕设选题',value:'毕设选题'},{label:'学院发布',value:'学院发布'},{label:'揭榜挂帅',value:'揭榜挂帅'}], placeholder: '请选择选题来源' },
+    { label: '是否“揭榜挂帅”专项', key: 'extra_info.is_jiebang', type: 'radio', required: true, options: [{label:'是',value:'是'},{label:'否',value:'否'}], placeholder: '请选择' },
+    { label: '重点支持项目', key: 'extra_info.is_key_support_candidate', type: 'radio', required: false, options: [{label:'是',value:'是'},{label:'否',value:'否'}], placeholder: '仅学院排序第1且已有成果可选' },
     { label: '所属学科', key: 'extra_info.subject', type: 'select', required: true, options: [], placeholder: '请选择所属学科' },
     { label: '项目简介', key: 'abstract', type: 'richtext', required: true, system: true, placeholder: '请输入项目简介' },
     { label: '创新点描述', key: 'extra_info.innovation_points', type: 'richtext', required: true, placeholder: '请输入创新点描述' },
+    { label: '研究方案与技术路线', key: 'extra_info.research_plan', type: 'richtext', required: true, placeholder: '请输入研究方案与技术路线' },
+    { label: '实施条件', key: 'extra_info.implementation_conditions', type: 'richtext', required: true, placeholder: '请输入实施条件' },
     { label: '预期成果', key: 'extra_info.expected_outcomes', type: 'checkbox', required: true, options: [{label:'论文',value:'paper'}, {label:'专利',value:'patent'}, {label:'软著',value:'software'}, {label:'实物',value:'product'}, {label:'调研报告',value:'report'}], placeholder: '请选择预期成果' },
-    { label: '指导教师', key: 'advisor_name', type: 'text', required: true, system: true, placeholder: '请输入指导教师姓名' }, // Simplified for now
-    { label: '团队成员', key: 'members', type: 'table', required: true, system: true, placeholder: '请添加团队成员' }, // Placeholder for table type support
+    { label: '指导教师姓名', key: 'advisor_name', type: 'text', required: true, system: true, placeholder: '请输入指导教师姓名' },
+    { label: '指导教师职称', key: 'extra_info.advisor_title', type: 'select', required: true, options: [{label:'教授',value:'教授'},{label:'副教授',value:'副教授'},{label:'讲师',value:'讲师'},{label:'助教',value:'助教'}], placeholder: '请选择职称' },
+    { label: '指导教师所在单位', key: 'extra_info.advisor_org', type: 'text', required: true, placeholder: '请输入所在单位' },
+    { label: '团队成员', key: 'members', type: 'table', required: true, system: true, placeholder: '请添加团队成员', columns: [{label:'学号',key:'student_id'},{label:'姓名',key:'name'},{label:'年级',key:'grade'},{label:'专业',key:'major'},{label:'角色',key:'role'}] },
     { label: '经费预算', key: 'extra_info.budget', type: 'table', required: true, placeholder: '请填写经费预算' },
     { label: '申报书附件', key: 'extra_info.attachments.application_doc', type: 'file', required: true, placeholder: '请上传申报书' },
+    { label: '已有阶段性成果', key: 'extra_info.attachments.stage_achievement', type: 'file', required: false, placeholder: '可选；重点支持项目必填' },
+    { label: '其他支撑材料', key: 'extra_info.attachments.other_support', type: 'file', required: false, placeholder: '可选' },
     { label: '公司名称', key: 'extra_info.company_info.name', type: 'text', required: true, placeholder: '请输入公司名称' },
     { label: '统一社会信用代码', key: 'extra_info.company_info.code', type: 'text', required: false, placeholder: '请输入统一社会信用代码' },
     { label: '注册时间', key: 'extra_info.company_info.founded_date', type: 'date', required: false, placeholder: '请选择注册时间' },
@@ -379,4 +388,3 @@ export default {
     </div>
     `
 };
-
