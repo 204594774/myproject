@@ -1447,7 +1447,7 @@ def get_system_logs():
     limit = request.args.get('limit', 100)
     conn = get_db_connection()
     logs = conn.execute(f'''
-        SELECT l.*, u.username, u.real_name 
+        SELECT l.id, l.user_id, l.action, l.details, l.ip_address, datetime(l.created_at, 'localtime') AS created_at, u.username, u.real_name 
         FROM system_logs l
         LEFT JOIN users u ON l.user_id = u.id
         ORDER BY l.created_at DESC LIMIT {limit}

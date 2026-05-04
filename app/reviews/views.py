@@ -1542,8 +1542,10 @@ def auto_assign_reviewers():
         FROM review_team_members rtm
         JOIN users u ON rtm.user_id = u.id
         WHERE rtm.team_id = ?
+          AND u.role = ?
+          AND u.status = 'active'
         ''',
-        (team['id'],)
+        (team['id'], ROLES['JUDGE'])
     ).fetchall()
     if not members:
         return fail('评审团队没有成员', 400)
@@ -1581,6 +1583,188 @@ def auto_assign_reviewers():
         except Exception:
             pass
         return fail(str(e), 500)
+
+
+@reviews_bp.route('/test/bootstrap_bulk', methods=['POST'])
+@login_required
+@role_required([ROLES['COLLEGE_APPROVER'], ROLES['SCHOOL_APPROVER'], ROLES['PROJECT_ADMIN'], ROLES['SYSTEM_ADMIN']])
+def bootstrap_bulk_reviews():
+    data = request.json or {}
+    review_level = str(data.get('review_level', 'college')).strip()
+    if review_level not in ['college', 'school']:
+        return fail('评审级别非法', 400)
+    project_ids = data.get('project_ids')
+    if not isinstance(project_ids, list) or not project_ids:
+        return fail('project_ids 不能为空', 400)
+
+    role = session.get('role')
+    if role == ROLES['COLLEGE_APPROVER'] and review_level != 'college':
+        return fail('无权限', 403)
+    if role == ROLES['SCHOOL_APPROVER'] and review_level != 'school':
+        return fail('无权限', 403)
+
+    discipline_group_req = str(data.get('discipline_group') or '').strip()
+
+    conn = get_db_connection()
+    created_total = 0
+    processed = 0
+    skipped = 0
+    skipped_samples = []
+
+    try:
+        conn.execute('BEGIN TRANSACTION')
+        for raw_id in project_ids:
+            try:
+                pid = int(raw_id)
+            except Exception:
+                skipped += 1
+                if len(skipped_samples) < 10:
+                    skipped_samples.append({'project_id': raw_id, 'reason': '项目ID非法'})
+                continue
+
+            project = conn.execute('SELECT * FROM projects WHERE id = ?', (pid,)).fetchone()
+            if not project:
+                skipped += 1
+                if len(skipped_samples) < 10:
+                    skipped_samples.append({'project_id': pid, 'reason': '项目不存在'})
+                continue
+
+            p = dict(project)
+            st = str(p.get('status') or '').strip()
+            if st in ['finished', 'finished_national_award', 'college_failed', 'school_failed', 'provincial_award']:
+                skipped += 1
+                if len(skipped_samples) < 10:
+                    skipped_samples.append({'project_id': pid, 'reason': '项目已结项/终止'})
+                continue
+
+            cl = str(p.get('current_level') or '').strip()
+            rs = str(p.get('review_stage') or '').strip()
+            if review_level == 'school':
+                if not (cl == 'school' or rs == 'school' or st in ['school_review', 'college_recommended', 'pending_school_recommendation']):
+                    skipped += 1
+                    if len(skipped_samples) < 10:
+                        skipped_samples.append({'project_id': pid, 'reason': '未进入校赛阶段'})
+                    continue
+            if review_level == 'college':
+                if not (cl == 'college' or rs == 'college' or st in ['pending', 'under_review', 'pending_college', 'reviewing', 'pending_college_recommendation']):
+                    skipped += 1
+                    if len(skipped_samples) < 10:
+                        skipped_samples.append({'project_id': pid, 'reason': '未进入学院赛阶段'})
+                    continue
+
+            discipline_group = discipline_group_req
+            if review_level == 'school' and not discipline_group:
+                try:
+                    ei = json.loads(p.get('extra_info') or '{}')
+                    if isinstance(ei, dict) and ei.get('discipline_group'):
+                        discipline_group = str(ei.get('discipline_group') or '').strip()
+                except Exception:
+                    pass
+            if review_level == 'school' and not discipline_group:
+                discipline_group = '理工组'
+
+            team = None
+            if review_level == 'college':
+                team = conn.execute(
+                    'SELECT * FROM review_teams WHERE level = ? AND college = ? AND enabled = 1 ORDER BY id LIMIT 1',
+                    ('college', p.get('college'))
+                ).fetchone()
+                if not team and p.get('college'):
+                    short_name = str(p.get('college') or '').split('（')[0].split('(')[0].strip()
+                    team = conn.execute(
+                        'SELECT * FROM review_teams WHERE level = ? AND college LIKE ? AND enabled = 1 ORDER BY id LIMIT 1',
+                        ('college', f"{short_name}%")
+                    ).fetchone()
+                if not team:
+                    team = conn.execute(
+                        'SELECT * FROM review_teams WHERE level = ? AND enabled = 1 ORDER BY id LIMIT 1',
+                        ('college',)
+                    ).fetchone()
+            else:
+                team = conn.execute(
+                    'SELECT * FROM review_teams WHERE level = ? AND discipline_group = ? AND enabled = 1 ORDER BY id LIMIT 1',
+                    ('school', discipline_group)
+                ).fetchone()
+                if not team:
+                    team = conn.execute(
+                        'SELECT * FROM review_teams WHERE level = ? AND enabled = 1 ORDER BY id LIMIT 1',
+                        ('school',)
+                    ).fetchone()
+
+            if not team:
+                skipped += 1
+                if len(skipped_samples) < 10:
+                    skipped_samples.append({'project_id': pid, 'reason': '未找到评审团队'})
+                continue
+
+            members = conn.execute(
+                '''
+                SELECT rtm.user_id
+                FROM review_team_members rtm
+                JOIN users u ON rtm.user_id = u.id
+                WHERE rtm.team_id = ?
+                  AND u.role = ?
+                  AND u.status = 'active'
+                ''',
+                (team['id'], ROLES['JUDGE'])
+            ).fetchall()
+            if not members:
+                skipped += 1
+                if len(skipped_samples) < 10:
+                    skipped_samples.append({'project_id': pid, 'reason': '评审团队无可用评委'})
+                continue
+
+            created = 0
+            for m in members:
+                existing = conn.execute(
+                    'SELECT id FROM review_tasks WHERE project_id = ? AND judge_id = ? AND review_level = ?',
+                    (pid, int(m['user_id']), review_level)
+                ).fetchone()
+                if existing:
+                    continue
+                conn.execute(
+                    'INSERT INTO review_tasks (project_id, judge_id, review_level, team_id, status, score, comments) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                    (pid, int(m['user_id']), review_level, int(team['id']), 'pending', 0, '')
+                )
+                created += 1
+
+                level_text = '学院赛' if review_level == 'college' else '校赛'
+                conn.execute(
+                    'INSERT INTO notifications (user_id, title, content, type) VALUES (?, ?, ?, ?)',
+                    (int(m['user_id']), f'新增{level_text}评审任务', f'项目《{p.get("title","")}》已有新的评审任务分配给您，请在“我的评审任务”中查看并处理。', 'project')
+                )
+
+            if created == 0:
+                skipped += 1
+                if len(skipped_samples) < 10:
+                    skipped_samples.append({'project_id': pid, 'reason': '已分配过'})
+                continue
+
+            if str(p.get('status') or '').strip() == 'pending':
+                conn.execute('UPDATE projects SET status = ? WHERE id = ?', ('under_review', pid))
+
+            created_total += created
+            processed += 1
+
+        conn.execute('COMMIT')
+    except Exception as e:
+        try:
+            conn.execute('ROLLBACK')
+        except Exception:
+            pass
+        return fail(str(e), 500)
+
+    return success(
+        data={
+            'review_level': review_level,
+            'total_input': len(project_ids),
+            'processed_projects': processed,
+            'created_tasks_total': created_total,
+            'skipped_projects': skipped,
+            'skipped_samples': skipped_samples
+        },
+        message='批量初始化完成'
+    )
 
 @reviews_bp.route('/calc_rank', methods=['POST'])
 @login_required
@@ -1853,11 +2037,182 @@ def bootstrap_test_reviews():
         data = request.json or {}
         project_id = data.get('project_id')
         review_level = str(data.get('review_level', 'college')).strip()
+        all_pending = bool(data.get('all_pending') or data.get('assign_all_pending'))
         if review_level not in ['college', 'school']:
             return fail('评审级别非法', 400)
 
         conn = get_db_connection()
         current_app.logger.info(f"Bootstrap reviews for project {project_id} at level {review_level}")
+
+        if all_pending:
+            if review_level == 'college':
+                candidates = conn.execute(
+                    """
+                    SELECT * FROM projects
+                    WHERE status IN ('pending', 'pending_college')
+                    ORDER BY id ASC
+                    """
+                ).fetchall()
+            else:
+                candidates = conn.execute(
+                    """
+                    SELECT * FROM projects
+                    WHERE status IN ('college_recommended', 'school_review', 'pending_school_recommendation')
+                    ORDER BY id ASC
+                    """
+                ).fetchall()
+
+            processed = 0
+            created_total = 0
+            assigned_projects = []
+            skipped_already_assigned = 0
+            skipped_invalid_stage = 0
+            skipped_no_team = 0
+            skipped_no_members = 0
+            skipped_terminal = 0
+
+            for project in candidates:
+                processed += 1
+                project_id = project['id']
+                st = str(project['status'] or '').strip()
+                if st in ['finished', 'finished_national_award', 'college_failed', 'school_failed', 'provincial_award']:
+                    skipped_terminal += 1
+                    continue
+
+                cl = str(project['current_level'] or '').strip()
+                rs = str(project['review_stage'] or '').strip()
+                if review_level == 'school':
+                    if not (cl == 'school' or rs == 'school' or st in ['school_review', 'college_recommended', 'pending_school_recommendation']):
+                        skipped_invalid_stage += 1
+                        continue
+                if review_level == 'college':
+                    if not (cl == 'college' or rs == 'college' or st in ['pending', 'under_review', 'pending_college', 'reviewing', 'pending_college_recommendation']):
+                        skipped_invalid_stage += 1
+                        continue
+
+                already = conn.execute(
+                    'SELECT 1 FROM review_tasks WHERE project_id = ? AND review_level = ? LIMIT 1',
+                    (project_id, review_level)
+                ).fetchone()
+                if already:
+                    skipped_already_assigned += 1
+                    continue
+
+                team = None
+                if review_level == 'college':
+                    team = conn.execute(
+                        'SELECT * FROM review_teams WHERE level = ? AND college = ? AND enabled = 1 ORDER BY id LIMIT 1',
+                        ('college', project['college'])
+                    ).fetchone()
+                    if not team and project['college']:
+                        short_name = project['college'].split('（')[0].split('(')[0].strip()
+                        team = conn.execute(
+                            'SELECT * FROM review_teams WHERE level = ? AND college LIKE ? AND enabled = 1 ORDER BY id LIMIT 1',
+                            ('college', f"{short_name}%")
+                        ).fetchone()
+                    if not team:
+                        team = conn.execute(
+                            'SELECT * FROM review_teams WHERE name LIKE "计算机学院%" AND enabled = 1 ORDER BY id LIMIT 1'
+                        ).fetchone()
+                else:
+                    dg = data.get('discipline_group')
+                    if not dg:
+                        try:
+                            dg = project['discipline_group']
+                        except Exception:
+                            dg = None
+                    if not dg:
+                        dg = '理工组'
+                    team = conn.execute(
+                        'SELECT * FROM review_teams WHERE level = ? AND discipline_group = ? AND enabled = 1 ORDER BY id LIMIT 1',
+                        ('school', dg)
+                    ).fetchone()
+                    if not team:
+                        team = conn.execute(
+                            'SELECT * FROM review_teams WHERE level = ? AND enabled = 1 ORDER BY id LIMIT 1',
+                            ('school',)
+                        ).fetchone()
+
+                if not team:
+                    skipped_no_team += 1
+                    continue
+
+                if team['name'] == '计算机学院评审测试组' or (team['college'] and '计算机' in str(team['college'])):
+                    test_judge_usernames = ['test_cc_college_judge1', 'test_cc_college_leader', 'test_cc_college_judge2']
+                    actual_judges = conn.execute(
+                        f"SELECT id FROM users WHERE username IN (?, ?, ?)",
+                        test_judge_usernames
+                    ).fetchall()
+                    for aj in actual_judges:
+                        conn.execute(
+                            'INSERT OR IGNORE INTO review_team_members (team_id, user_id, role_in_team) VALUES (?, ?, ?)',
+                            (team['id'], aj['id'], 'member')
+                        )
+
+                members = conn.execute(
+                    """
+                    SELECT rtm.user_id
+                    FROM review_team_members rtm
+                    JOIN users u ON rtm.user_id = u.id
+                    WHERE rtm.team_id = ?
+                      AND u.role = ?
+                      AND u.status = 'active'
+                    """,
+                    (team['id'], ROLES['JUDGE'])
+                ).fetchall()
+
+                conn.execute(
+                    'DELETE FROM review_team_members WHERE team_id = ? AND user_id NOT IN (SELECT id FROM users)',
+                    (team['id'],)
+                )
+
+                if not members:
+                    skipped_no_members += 1
+                    continue
+
+                created = 0
+                for m in members:
+                    existing = conn.execute(
+                        'SELECT id FROM review_tasks WHERE project_id = ? AND judge_id = ? AND review_level = ?',
+                        (project_id, m['user_id'], review_level)
+                    ).fetchone()
+                    if existing:
+                        continue
+
+                    conn.execute(
+                        'INSERT INTO review_tasks (project_id, judge_id, review_level, team_id, status, score, comments) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                        (project_id, m['user_id'], review_level, team['id'], 'pending', 0, '')
+                    )
+                    level_text = '学院赛' if review_level == 'college' else '校赛'
+                    conn.execute(
+                        'INSERT INTO notifications (user_id, title, content, type) VALUES (?, ?, ?, ?)',
+                        (m['user_id'], f'新增{level_text}评审任务', f'项目《{project["title"]}》已有新的评审任务分配给您，请在“我的评审任务”中查看并处理。', 'project')
+                    )
+                    created += 1
+
+                if created > 0:
+                    created_total += created
+                    assigned_projects.append(project_id)
+                    if st in ['pending', 'pending_college']:
+                        conn.execute('UPDATE projects SET status = ? WHERE id = ?', ('under_review', project_id))
+
+            conn.commit()
+            sample_assigned = assigned_projects[:20]
+            return success(
+                data={
+                    'review_level': review_level,
+                    'processed_projects': processed,
+                    'created_tasks': created_total,
+                    'assigned_projects': len(assigned_projects),
+                    'assigned_project_ids_sample': sample_assigned,
+                    'skipped_already_assigned': skipped_already_assigned,
+                    'skipped_invalid_stage': skipped_invalid_stage,
+                    'skipped_no_team': skipped_no_team,
+                    'skipped_no_members': skipped_no_members,
+                    'skipped_terminal': skipped_terminal
+                },
+                message='批量初始化成功'
+            )
 
         project = None
         if project_id is not None:
@@ -1951,15 +2306,17 @@ def bootstrap_test_reviews():
                     (team['id'], aj['id'], 'member')
                 )
 
-        # 重新获取最新的团队成员列表（仅获取系统中存在的用户）
+        # 重新获取最新的团队成员列表（仅获取系统中存在的评委账号）
         members = conn.execute(
             '''
             SELECT rtm.user_id 
             FROM review_team_members rtm
             JOIN users u ON rtm.user_id = u.id
             WHERE rtm.team_id = ?
+              AND u.role = ?
+              AND u.status = 'active'
             ''',
-            (team['id'],)
+            (team['id'], ROLES['JUDGE'])
         ).fetchall()
         
         # 清理失效的成员记录

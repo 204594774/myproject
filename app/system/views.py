@@ -16,6 +16,7 @@ import io
 
 config = get_config()
 ROLES = config.ROLES
+PROJECT_ADMIN_LOG_PREFIXES = ['PROJECT_', 'REVIEW_', 'AWARD_']
 
 system_bp = Blueprint('system', __name__, url_prefix='/api')
 
@@ -353,22 +354,48 @@ def export_projects_report():
 
 @system_bp.route('/logs', methods=['GET'])
 @login_required
-@role_required([ROLES['SYSTEM_ADMIN']])
+@role_required([ROLES['SYSTEM_ADMIN'], ROLES['PROJECT_ADMIN']])
 def get_logs():
-    limit = request.args.get('limit', 100)
+    role = session.get('role')
+    action_prefix = (request.args.get('action_prefix') or '').strip()
+    try:
+        limit = int(request.args.get('limit', 100))
+    except Exception:
+        limit = 100
+    if limit <= 0:
+        limit = 100
+    if limit > 5000:
+        limit = 5000
     conn = get_db_connection()
-    logs = conn.execute(f'''
-        SELECT l.*, u.username, u.real_name 
+    q = '''
+        SELECT l.id, l.user_id, l.action, l.details, l.ip_address, datetime(l.created_at, 'localtime') AS created_at, u.username, u.real_name
         FROM system_logs l
         LEFT JOIN users u ON l.user_id = u.id
-        ORDER BY l.created_at DESC LIMIT {limit}
-    ''').fetchall()
+        WHERE 1=1
+    '''
+    params = []
+    if role == ROLES['PROJECT_ADMIN']:
+        if action_prefix and not any(action_prefix.startswith(p) for p in PROJECT_ADMIN_LOG_PREFIXES):
+            return fail('项目管理员仅可查看项目域日志', 403)
+        if action_prefix:
+            q += ' AND l.action LIKE ?'
+            params.append(f"{action_prefix}%")
+        else:
+            q += ' AND (' + ' OR '.join(['l.action LIKE ?' for _ in PROJECT_ADMIN_LOG_PREFIXES]) + ')'
+            params.extend([f"{p}%" for p in PROJECT_ADMIN_LOG_PREFIXES])
+    elif action_prefix:
+        q += ' AND l.action LIKE ?'
+        params.append(f"{action_prefix}%")
+    q += ' ORDER BY l.created_at DESC LIMIT ?'
+    params.append(limit)
+    logs = conn.execute(q, params).fetchall()
     return success(data=[dict(l) for l in logs])
 
 @system_bp.route('/logs/export', methods=['GET'])
 @login_required
-@role_required([ROLES['SYSTEM_ADMIN']])
+@role_required([ROLES['SYSTEM_ADMIN'], ROLES['PROJECT_ADMIN']])
 def export_logs():
+    role = session.get('role')
     action_prefix = (request.args.get('action_prefix') or '').strip()
     limit = int(request.args.get('limit', 5000))
     if limit <= 0:
@@ -378,13 +405,22 @@ def export_logs():
     conn = get_db_connection()
     try:
         q = '''
-            SELECT l.id, l.created_at, l.action, l.details, l.ip_address, u.username, u.real_name
+            SELECT l.id, datetime(l.created_at, 'localtime') AS created_at, l.action, l.details, l.ip_address, u.username, u.real_name
             FROM system_logs l
             LEFT JOIN users u ON l.user_id = u.id
             WHERE 1=1
         '''
         params = []
-        if action_prefix:
+        if role == ROLES['PROJECT_ADMIN']:
+            if action_prefix and not any(action_prefix.startswith(p) for p in PROJECT_ADMIN_LOG_PREFIXES):
+                return fail('项目管理员仅可导出项目域日志', 403)
+            if action_prefix:
+                q += ' AND l.action LIKE ?'
+                params.append(f"{action_prefix}%")
+            else:
+                q += ' AND (' + ' OR '.join(['l.action LIKE ?' for _ in PROJECT_ADMIN_LOG_PREFIXES]) + ')'
+                params.extend([f"{p}%" for p in PROJECT_ADMIN_LOG_PREFIXES])
+        elif action_prefix:
             q += ' AND l.action LIKE ?'
             params.append(f"{action_prefix}%")
         q += ' ORDER BY l.created_at DESC LIMIT ?'

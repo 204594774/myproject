@@ -947,6 +947,21 @@ def ensure_db_schema():
         ''')
 
         conn.execute('''
+            CREATE TABLE IF NOT EXISTS email_verification_codes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                email TEXT NOT NULL,
+                scene TEXT NOT NULL,
+                code_hash TEXT NOT NULL,
+                expires_at TIMESTAMP NOT NULL,
+                used INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+            )
+        ''')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_email_code_user_scene ON email_verification_codes(user_id, scene, used)')
+
+        conn.execute('''
             CREATE TABLE IF NOT EXISTS announcements (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT NOT NULL,

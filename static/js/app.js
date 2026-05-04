@@ -498,15 +498,25 @@ const Login = {
             </el-form>
         </el-card>
 
-        <el-dialog v-model="showForgotDialog" title="忘记密码" width="420px">
+        <el-dialog v-model="showForgotDialog" title="忘记密码（邮箱验证）" width="420px">
             <el-form :model="forgotForm" label-width="90px">
-                <el-form-item label="工号/学号" required>
-                    <el-input v-model="forgotForm.username" placeholder="请输入工号/学号"></el-input>
+                <el-form-item label="学号/工号" required>
+                    <el-input v-model="forgotForm.username" placeholder="请输入学号/工号"></el-input>
+                </el-form-item>
+                <el-form-item label="邮箱验证码" required>
+                    <el-row :gutter="8" style="width: 100%;">
+                        <el-col :span="14">
+                            <el-input v-model="forgotForm.code" placeholder="请输入邮箱验证码"></el-input>
+                        </el-col>
+                        <el-col :span="10">
+                            <el-button style="width: 100%;" :loading="forgotCodeSending" @click="sendForgotCode">发送验证码</el-button>
+                        </el-col>
+                    </el-row>
                 </el-form-item>
             </el-form>
             <template #footer>
                 <el-button @click="showForgotDialog = false">取消</el-button>
-                <el-button type="primary" :loading="forgotLoading" @click="submitForgotPassword">重置为123456</el-button>
+                <el-button type="primary" :loading="forgotLoading" @click="submitForgotPassword">邮箱验证后重置</el-button>
             </template>
         </el-dialog>
     </div>
@@ -516,7 +526,8 @@ const Login = {
             loading: false,
             showForgotDialog: false,
             forgotLoading: false,
-            forgotForm: { username: '' },
+            forgotCodeSending: false,
+            forgotForm: { username: '', code: '' },
             form: {
                 username: '',
                 password: '',
@@ -555,13 +566,18 @@ const Login = {
         },
         async submitForgotPassword() {
             const u = String(this.forgotForm.username || '').trim();
+            const c = String(this.forgotForm.code || '').trim();
             if (!u) {
-                ElementPlus.ElMessage.warning('请输入工号/学号');
+                ElementPlus.ElMessage.warning('请输入学号/工号');
+                return;
+            }
+            if (!c) {
+                ElementPlus.ElMessage.warning('请输入邮箱验证码');
                 return;
             }
             this.forgotLoading = true;
             try {
-                await axios.post('/api/auth/forgot_password', { username: u });
+                await axios.post('/api/auth/forgot_password', { username: u, code: c });
                 ElementPlus.ElMessage.success('已重置为 123456，请使用新密码登录');
                 this.showForgotDialog = false;
                 this.form.username = u;
@@ -570,6 +586,22 @@ const Login = {
                 ElementPlus.ElMessage.error(e.response?.data?.error || e.message || '操作失败');
             } finally {
                 this.forgotLoading = false;
+            }
+        },
+        async sendForgotCode() {
+            const u = String(this.forgotForm.username || '').trim();
+            if (!u) {
+                ElementPlus.ElMessage.warning('请输入学号/工号');
+                return;
+            }
+            this.forgotCodeSending = true;
+            try {
+                await axios.post('/api/auth/email_code/send', { scene: 'forgot_password', username: u });
+                ElementPlus.ElMessage.success('验证码已发送至账号绑定邮箱');
+            } catch (e) {
+                ElementPlus.ElMessage.error(e.response?.data?.error || e.message || '发送失败');
+            } finally {
+                this.forgotCodeSending = false;
             }
         },
         fillQuick(type) {
@@ -873,7 +905,9 @@ const FormDesigner = {
                 type: 'text',
                 required: false,
                 system: false,
-                options: []
+                options: [],
+                columns: [],
+                validation: {}
             };
             this.showFieldDialog = true;
         },
@@ -889,6 +923,9 @@ const FormDesigner = {
             this.editingField = JSON.parse(JSON.stringify(this.config.groups[groupIndex].fields[fieldIndex]));
             if (!this.editingField.options) this.editingField.options = [];
             if (!this.editingField.columns) this.editingField.columns = [];
+            if (!this.editingField.validation || typeof this.editingField.validation !== 'object') {
+                this.editingField.validation = {};
+            }
             this.showFieldDialog = true;
         },
         // --- Table Column Management ---
@@ -947,6 +984,12 @@ const FormDesigner = {
         },
         removeOption(index) {
             this.editingField.options.splice(index, 1);
+        },
+        updateEditingValidation(key, value) {
+            if (!this.editingField.validation || typeof this.editingField.validation !== 'object') {
+                this.editingField.validation = {};
+            }
+            this.editingField.validation[key] = value;
         },
 
         emitUpdate() {
@@ -1067,10 +1110,10 @@ const FormDesigner = {
                     <el-tab-pane label="校验规则">
                         <!-- Simplified validation for now -->
                         <el-form-item label="正则(可选)">
-                            <el-input v-model="editingField.validation.regex" placeholder="/^...$/"></el-input>
+                            <el-input :model-value="editingField.validation?.regex || ''" @update:modelValue="val => updateEditingValidation('regex', val)" placeholder="/^...$/"></el-input>
                         </el-form-item>
                         <el-form-item label="错误提示">
-                            <el-input v-model="editingField.validation.message" placeholder="校验失败时的提示"></el-input>
+                            <el-input :model-value="editingField.validation?.message || ''" @update:modelValue="val => updateEditingValidation('message', val)" placeholder="校验失败时的提示"></el-input>
                         </el-form-item>
                     </el-tab-pane>
                 </el-tabs>
@@ -1389,7 +1432,7 @@ const Dashboard = {
                             </div>
                         </div>
 
-                        <el-table :data="reviewManagementProjects" border style="width: 100%" v-loading="loading" @selection-change="handleReviewMgmtSelectionChange">
+                        <el-table :data="reviewManagementProjects" border style="width: 100%" v-loading="loading" @selection-change="handleReviewMgmtSelectionChange" @row-click="onReviewMgmtRowClick" highlight-current-row>
                             <el-table-column
                                 type="selection"
                                 width="55"
@@ -1645,6 +1688,47 @@ const Dashboard = {
                         </el-col>
                     </el-row>
                 </div>
+            </el-tab-pane>
+
+            <el-tab-pane label="操作日志" name="audit_logs" v-if="canViewAuditLogs">
+                <el-card shadow="never" header="操作日志追踪">
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom: 12px;">
+                        <el-input
+                            v-model="auditActionPrefix"
+                            placeholder="按动作前缀筛选（如 PROJECT_、REVIEW_）"
+                            clearable
+                            style="width: 320px;"
+                            @keyup.enter="fetchAuditLogs"
+                        ></el-input>
+                        <el-select v-model="auditLogLimit" style="width: 140px;">
+                            <el-option :value="100" label="最近100条"></el-option>
+                            <el-option :value="200" label="最近200条"></el-option>
+                            <el-option :value="500" label="最近500条"></el-option>
+                            <el-option :value="1000" label="最近1000条"></el-option>
+                        </el-select>
+                        <el-button @click="fetchAuditLogs" :loading="auditLogsLoading">刷新日志</el-button>
+                        <el-button type="primary" @click="exportAuditLogs" :loading="exportingAuditLogs">导出日志CSV</el-button>
+                    </div>
+                    <el-alert
+                        v-if="user?.role === 'project_admin'"
+                        title="项目管理员仅可查看项目域日志（PROJECT_/REVIEW_/AWARD_）"
+                        type="info"
+                        :closable="false"
+                        style="margin-bottom: 10px;"
+                    ></el-alert>
+                    <el-table :data="auditLogs" stripe border v-loading="auditLogsLoading" size="small" max-height="520">
+                        <el-table-column prop="id" label="ID" width="70"></el-table-column>
+                        <el-table-column label="操作人" width="180">
+                            <template #default="scope">
+                                {{ (scope.row.real_name || scope.row.username || '-') + (scope.row.username ? (' (' + scope.row.username + ')') : '') }}
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="action" label="动作" width="220"></el-table-column>
+                        <el-table-column prop="details" label="对象/详情" min-width="320" show-overflow-tooltip></el-table-column>
+                        <el-table-column prop="ip_address" label="来源IP" width="150"></el-table-column>
+                        <el-table-column prop="created_at" label="时间" width="180"></el-table-column>
+                    </el-table>
+                </el-card>
             </el-tab-pane>
 
                 <!-- 赛事大厅/可选项目 (学生可见) -->
@@ -1941,6 +2025,37 @@ const Dashboard = {
                         </el-form-item>
                     </el-form>
                 </el-card>
+                <el-card shadow="never" class="mt-4" header="操作日志追踪">
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom: 12px;">
+                        <el-input
+                            v-model="auditActionPrefix"
+                            placeholder="按动作前缀筛选（如 PROJECT_、REVIEW_）"
+                            clearable
+                            style="width: 320px;"
+                            @keyup.enter="fetchAuditLogs"
+                        ></el-input>
+                        <el-select v-model="auditLogLimit" style="width: 140px;">
+                            <el-option :value="100" label="最近100条"></el-option>
+                            <el-option :value="200" label="最近200条"></el-option>
+                            <el-option :value="500" label="最近500条"></el-option>
+                            <el-option :value="1000" label="最近1000条"></el-option>
+                        </el-select>
+                        <el-button @click="fetchAuditLogs" :loading="auditLogsLoading">刷新日志</el-button>
+                        <el-button type="primary" @click="exportAuditLogs" :loading="exportingAuditLogs">导出日志CSV</el-button>
+                    </div>
+                    <el-table :data="auditLogs" stripe border v-loading="auditLogsLoading" size="small" max-height="360">
+                        <el-table-column prop="id" label="ID" width="70"></el-table-column>
+                        <el-table-column label="操作人" width="180">
+                            <template #default="scope">
+                                {{ (scope.row.real_name || scope.row.username || '-') + (scope.row.username ? (' (' + scope.row.username + ')') : '') }}
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="action" label="动作" width="220"></el-table-column>
+                        <el-table-column prop="details" label="对象/详情" min-width="320" show-overflow-tooltip></el-table-column>
+                        <el-table-column prop="ip_address" label="来源IP" width="150"></el-table-column>
+                        <el-table-column prop="created_at" label="时间" width="180"></el-table-column>
+                    </el-table>
+                </el-card>
                 <el-row :gutter="20" class="mt-4">
                     <el-col :span="12">
                         <el-card header="项目统计">
@@ -2000,11 +2115,14 @@ const Dashboard = {
                             <el-divider v-if="group.title" content-position="left">{{ group.title }}</el-divider>
                             <template v-if="isAdvisorGroup(group)">
                                 <div style="margin-bottom: 6px; display: flex; gap: 8px;">
-                                    <span style="color: #f56c6c;">{{ (createForm.project_type==='entrepreneurship_training'||createForm.project_type==='entrepreneurship_practice') ? '创业类项目需双导师（校内+企业）' : '仅需校内指导教师' }}</span>
+                                    <span style="color: #f56c6c;">
+                                        {{ (createForm.project_type==='entrepreneurship_training'||createForm.project_type==='entrepreneurship_practice') ? '创业类项目需双导师（校内+校外企业）' : '仅需校内指导教师' }}
+                                        （校内导师职称原则上需中级及以上，如讲师及以上）
+                                    </span>
                                     <el-button
                                         size="small"
                                         type="primary"
-                                        :disabled="(createForm.extra_info?.advisors?.length || 0) >= ((createForm.project_type==='entrepreneurship_training'||createForm.project_type==='entrepreneurship_practice') ? 2 : 3)"
+                                        :disabled="(createForm.extra_info?.advisors?.length || 0) >= (createForm.project_type==='innovation' ? 1 : ((createForm.project_type==='entrepreneurship_training'||createForm.project_type==='entrepreneurship_practice') ? 2 : 3))"
                                         @click="addAdvisor"
                                     >新增</el-button>
                                 </div>
@@ -2019,16 +2137,32 @@ const Dashboard = {
                                             <el-input v-model="scope.row.work_id" placeholder="工号"></el-input>
                                         </template>
                                     </el-table-column>
-                                    <el-table-column label="所在学院" min-width="150">
+                                    <el-table-column label="所在单位" min-width="150">
                                         <template #default="scope">
-                                            <el-select v-model="scope.row.org" style="width: 100%" placeholder="所在学院/单位" filterable allow-create default-first-option>
-                                                <el-option v-for="opt in advisorOrgOptions" :key="opt" :label="opt" :value="opt"></el-option>
+                                            <el-input
+                                                v-if="String(scope.row.guidance_type || '').trim() === '企业导师'"
+                                                v-model="scope.row.org"
+                                                placeholder="所在单位（自行填写）"
+                                            ></el-input>
+                                            <el-select
+                                                v-else
+                                                v-model="scope.row.org"
+                                                style="width: 100%"
+                                                placeholder="所在学院"
+                                                filterable
+                                            >
+                                                <el-option v-for="opt in advisorCollegeOptions" :key="opt" :label="opt" :value="opt"></el-option>
                                             </el-select>
                                         </template>
                                     </el-table-column>
                                     <el-table-column label="职称" min-width="120">
                                         <template #default="scope">
-                                            <el-select v-model="scope.row.title" style="width: 100%" placeholder="职称" filterable>
+                                            <el-input
+                                                v-if="String(scope.row.guidance_type || '').trim() === '企业导师'"
+                                                v-model="scope.row.title"
+                                                placeholder="职称/岗位（自行填写）"
+                                            ></el-input>
+                                            <el-select v-else v-model="scope.row.title" style="width: 100%" placeholder="职称" filterable>
                                                 <el-option v-for="opt in advisorTitleOptions" :key="opt" :label="opt" :value="opt"></el-option>
                                             </el-select>
                                         </template>
@@ -2076,8 +2210,6 @@ const Dashboard = {
                                             <template #label>
                                                 <span>
                                                     {{ field.label }}
-                                                    <span v-if="field.key === 'members'" style="color: #f56c6c; margin-left: 6px;">({{ getMembersLimitHint(field) }})</span>
-                                                    <span v-else-if="field.key === 'abstract' && !String(field.label || '').includes('200字')" style="color: #f56c6c; margin-left: 6px;">(200字以内)</span>
                                                 </span>
                                             </template>
                                             <el-input
@@ -2286,7 +2418,17 @@ const Dashboard = {
                                                         <el-table-column v-for="col in getEffectiveTableColumns(field)" :key="col.key" :prop="col.key" :label="col.label" :min-width="col.width || 120">
                                                             <template #default="scope">
                                                                 <el-select
-                                                                    v-if="field.key === 'members' && col.key === 'role'"
+                                                                    v-if="field.key === 'extra_info.advisor_contacts' && col.key === 'guidance_type'"
+                                                                    :model-value="scope.row[col.key]"
+                                                                    @update:modelValue="val => updateTableCell(createForm, field.key, scope.$index, col.key, val)"
+                                                                    style="width: 100%;"
+                                                                    placeholder="请选择指导类型"
+                                                                >
+                                                                    <el-option label="校内" value="校内"></el-option>
+                                                                    <el-option label="校外" value="校外"></el-option>
+                                                                </el-select>
+                                                                <el-select
+                                                                    v-else-if="field.key === 'members' && col.key === 'role'"
                                                                     :model-value="scope.row[col.key]"
                                                                     @update:modelValue="val => updateTableCell(createForm, field.key, scope.$index, col.key, val)"
                                                                     style="width: 100%;"
@@ -5059,7 +5201,7 @@ const Dashboard = {
                                             "type": "select",
                                             "required": true,
                                             "options": [
-                                                { "label": "无", "value": "" },
+                                                { "label": "无", "value": "none" },
                                                 { "label": "揭榜挂帅", "value": "jiebang" }
                                             ]
                                         }
@@ -5269,6 +5411,13 @@ const Dashboard = {
                                             "label": "财务预测",
                                             "type": "table",
                                             "required": true
+                                        },
+                                        {
+                                            "key": "extra_info.attachments.financial_proof",
+                                            "label": "财务流水/证明",
+                                            "type": "file",
+                                            "required": false,
+                                            "placeholder": "可选上传，支持PDF/JPG/PNG"
                                         }
                                     ]
                                 },
@@ -5284,11 +5433,17 @@ const Dashboard = {
                                             "columns": [{ "label": "学号", "key": "student_id", "width": 140 }, { "label": "姓名", "key": "name", "width": 100 }, { "label": "学院", "key": "college", "width": 150 }, { "label": "年级", "key": "grade", "width": 100 }, { "label": "专业", "key": "major", "width": 160 }, { "label": "角色", "key": "role", "width": 120 }]
                                         },
                                         {
-                                            "key": "advisor_name",
-                                            "label": "指导教师",
-                                            "type": "text",
+                                            "key": "extra_info.advisor_contacts",
+                                            "label": "指导教师信息",
+                                            "type": "table",
                                             "required": true,
-                                            "system": true
+                                            "columns": [
+                                                { "label": "姓名", "key": "name", "width": 120 },
+                                                { "label": "职称", "key": "title", "width": 120 },
+                                                { "label": "所在单位", "key": "org", "width": 180 },
+                                                { "label": "指导类型（校内/校外）", "key": "guidance_type", "width": 170 },
+                                                { "label": "联系电话", "key": "phone", "width": 140 }
+                                            ]
                                         }
                                     ]
                                 },
@@ -5314,7 +5469,14 @@ const Dashboard = {
                                             "label": "1分钟视频",
                                             "type": "file",
                                             "required": false,
-                                            "placeholder": "MP4格式（省赛/国赛强制）"
+                                            "placeholder": "MP4格式，时长≤1分钟，省赛/国赛必填"
+                                        },
+                                        {
+                                            "key": "extra_info.attachments.supporting_evidence",
+                                            "label": "佐证材料",
+                                            "type": "file",
+                                            "required": false,
+                                            "placeholder": "可选上传，支持PDF/JPG/PNG"
                                         }
                                     ]
                                 }
@@ -5824,6 +5986,11 @@ const Dashboard = {
             loadingStats: false,
             exporting: false,
             backupLoading: false,
+            auditLogs: [],
+            auditLogsLoading: false,
+            auditLogLimit: 200,
+            auditActionPrefix: '',
+            exportingAuditLogs: false,
 
             // File Upload
             showUploadDialog: false,
@@ -5977,6 +6144,7 @@ const Dashboard = {
                 competition_id: '',
                 scope_key: ''
             },
+            reviewMgmtPickedProjectId: null,
             publishedResultsVisible: false,
             publishedResultsLoading: false,
             publishedResults: [],
@@ -6115,8 +6283,9 @@ const Dashboard = {
             // Keyword Filter (searchQuery or filters.keyword)
             const q = (this.filters.keyword || this.searchQuery || '').toLowerCase();
             if (q) {
+                const isPureId = /^\d+$/.test(q);
                 base = base.filter(p => 
-                    String(p.id || '').includes(q) ||
+                    (isPureId ? String(p.id || '') === q : String(p.id || '').includes(q)) ||
                     String(p.title || '').toLowerCase().includes(q) ||
                     String(p.leader_name || '').toLowerCase().includes(q) ||
                     String(p.advisor_name || '').toLowerCase().includes(q) ||
@@ -6246,7 +6415,13 @@ const Dashboard = {
                 base = base.filter(p => !(p[scoreField] === null || p[scoreField] === undefined || p[scoreField] === ''));
             }
 
-            return base;
+            const map = new Map();
+            for (const p of base) {
+                const id = Number(p?.id);
+                if (!id || isNaN(id)) continue;
+                if (!map.has(id)) map.set(id, p);
+            }
+            return Array.from(map.values());
         },
         reviewMgmtCompetitionTemplateKey() {
             const cid = this.reviewMgmt?.competition_id;
@@ -6380,6 +6555,9 @@ const Dashboard = {
         canViewReports() {
             return this.user?.role && ['system_admin', 'project_admin', 'school_approver', 'college_approver'].includes(this.user.role);
         },
+        canViewAuditLogs() {
+            return this.user?.role && ['system_admin', 'project_admin'].includes(this.user.role);
+        },
         allowedProjectTypes() {
             const allTypes = [
                 { label: '创新训练', value: 'innovation' },
@@ -6399,6 +6577,18 @@ const Dashboard = {
         },
         advisorTitleOptions() {
             return ['教授', '副教授', '讲师', '助教', '研究员', '副研究员', '高级工程师', '工程师', '其他'];
+        },
+        advisorCollegeOptions() {
+            const base = Array.isArray(CNMU_COLLEGES) ? CNMU_COLLEGES : [];
+            const out = [];
+            for (const v of base) {
+                if (!v) continue;
+                if (v === '创新创业学院') continue;
+                if (v === '信息化建设管理处') continue;
+                if (out.includes(v)) continue;
+                out.push(v);
+            }
+            return out;
         },
         advisorOrgOptions() {
             const base = []
@@ -6666,6 +6856,9 @@ const Dashboard = {
                 this.fetchNotifications();
             } else if (val === 'system') {
                 this.fetchSystemStats();
+                this.fetchAuditLogs();
+            } else if (val === 'audit_logs' && this.canViewAuditLogs) {
+                this.fetchAuditLogs();
             } else if (val === 'reports' && this.canViewReports) {
                 this.fetchStats();
             } else if (val === 'competitions' || val === 'comp_mgmt') {
@@ -7494,6 +7687,52 @@ const Dashboard = {
                 const res = await axios.get('/api/stats');
                 this.systemStats = res.data?.data || res.data || {};
             } catch(e) { console.error(e); }
+        },
+        async fetchAuditLogs() {
+            if (!['system_admin', 'project_admin'].includes(String(this.user?.role || ''))) return;
+            this.auditLogsLoading = true;
+            try {
+                const params = { limit: Number(this.auditLogLimit) || 200 };
+                if (String(this.auditActionPrefix || '').trim()) {
+                    params.action_prefix = String(this.auditActionPrefix || '').trim();
+                }
+                const res = await axios.get('/api/logs', { params });
+                this.auditLogs = Array.isArray(res.data) ? res.data : [];
+            } catch (e) {
+                console.error(e);
+                this.auditLogs = [];
+                ElementPlus.ElMessage.error(e.response?.data?.error || e.message || '获取操作日志失败');
+            } finally {
+                this.auditLogsLoading = false;
+            }
+        },
+        async exportAuditLogs() {
+            if (!['system_admin', 'project_admin'].includes(String(this.user?.role || ''))) return;
+            this.exportingAuditLogs = true;
+            try {
+                const params = {};
+                if (String(this.auditActionPrefix || '').trim()) {
+                    params.action_prefix = String(this.auditActionPrefix || '').trim();
+                }
+                if (Number(this.auditLogLimit) > 0) {
+                    params.limit = Number(this.auditLogLimit);
+                }
+                const response = await axios.get('/api/logs/export', { params, responseType: 'blob' });
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', 'system_logs.csv');
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(url);
+                ElementPlus.ElMessage.success('日志导出成功');
+            } catch (e) {
+                console.error(e);
+                ElementPlus.ElMessage.error(e.response?.data?.error || e.message || '日志导出失败');
+            } finally {
+                this.exportingAuditLogs = false;
+            }
         },
         async fetchProjects() {
             this.loading = true;
@@ -9423,6 +9662,47 @@ const Dashboard = {
             if (Array.isArray(field.options) && field.type === 'table') return field.options;
             return [];
         },
+        getInternetPlusAdvisorColumns() {
+            return [
+                { label: '姓名', key: 'name', width: 120 },
+                { label: '职称', key: 'title', width: 120 },
+                { label: '所在单位', key: 'org', width: 180 },
+                { label: '指导类型（校内/校外）', key: 'guidance_type', width: 170 },
+                { label: '联系电话', key: 'phone', width: 140 }
+            ];
+        },
+        normalizeInternetPlusFormConfig(cfg) {
+            const c = cfg && typeof cfg === 'object' ? JSON.parse(JSON.stringify(cfg)) : null;
+            if (!c || !Array.isArray(c.groups)) return cfg;
+            let touched = false;
+            for (const g of c.groups) {
+                const fs = Array.isArray(g?.fields) ? g.fields : [];
+                if (!fs.length) continue;
+                const hasInternetPlusHint = fs.some(f => String(f?.key || '').includes('extra_info.market_pain_points') || String(f?.key || '').includes('extra_info.core_competitiveness')) || String(g?.title || '').includes('团队信息');
+                if (!hasInternetPlusHint) continue;
+                const filtered = fs.filter(f => String(f?.key || '').trim() !== 'advisor_name');
+                const hasMembers = filtered.some(f => String(f?.key || '').trim() === 'members');
+                if (!hasMembers) continue;
+                const idx = filtered.findIndex(f => String(f?.key || '').trim() === 'extra_info.advisor_contacts');
+                const advisorField = {
+                    key: 'extra_info.advisor_contacts',
+                    label: '指导教师信息',
+                    type: 'table',
+                    required: true,
+                    columns: this.getInternetPlusAdvisorColumns()
+                };
+                if (idx >= 0) {
+                    filtered[idx] = { ...filtered[idx], ...advisorField, columns: this.getInternetPlusAdvisorColumns() };
+                } else {
+                    const memberIdx = filtered.findIndex(f => String(f?.key || '').trim() === 'members');
+                    if (memberIdx >= 0) filtered.splice(memberIdx + 1, 0, advisorField);
+                    else filtered.push(advisorField);
+                }
+                g.fields = filtered;
+                touched = true;
+            }
+            return touched ? c : cfg;
+        },
         getCollaboratorsLimit(form, fieldKey) {
             const t = String(this.getFieldValue(form, 'extra_info.declaration_type') || '').trim();
             if (t === 'individual') return 2;
@@ -9460,6 +9740,9 @@ const Dashboard = {
                 row.college = row.college || this.getFieldValue(form, 'extra_info.leader_info.college') || (this.user?.college || '');
                 row.grade = row.grade || '';
                 row.major = row.major || '';
+            }
+            if (String(key || '').trim() === 'extra_info.advisor_contacts') {
+                row.guidance_type = row.guidance_type || '校内';
             }
             rows.push(row);
             this.setFieldValue(form, key, rows);
@@ -9779,6 +10062,12 @@ const Dashboard = {
             const ei = this.createForm.extra_info || {};
             let advisors = Array.isArray(ei.advisors) ? ei.advisors : [];
             const mk = (guidance_type) => ({ name: '', work_id: '', title: '', org: '', guidance_type, research_area: '', admin_title: '', phone: '', email: '' });
+            if (ptype === 'innovation') {
+                const first = advisors[0] || mk('校内导师');
+                ei.advisors = [{ ...mk('校内导师'), ...(first || {}), guidance_type: '校内导师' }];
+                this.createForm.extra_info = ei;
+                return;
+            }
             if (ptype === 'entrepreneurship_training' || ptype === 'entrepreneurship_practice') {
                 const hasInternal = advisors.some(a => String(a?.guidance_type || '').trim() === '校内导师');
                 const hasEnterprise = advisors.some(a => String(a?.guidance_type || '').trim() === '企业导师');
@@ -9864,6 +10153,7 @@ const Dashboard = {
                 extra_info: {
                     leader_info: leaderInfo,
                     attachments: {},
+                    special_topic: 'none',
                     advisors: [
                         { name: '', work_id: '', title: '', org: '', guidance_type: '校内导师', research_area: '', admin_title: '', phone: '', email: '' }
                     ]
@@ -9898,11 +10188,55 @@ const Dashboard = {
                         const cfg = typeof comp.form_config === 'string' ? JSON.parse(comp.form_config) : comp.form_config;
                         if (cfg && typeof cfg === 'object') {
                             if (!Array.isArray(cfg.groups)) cfg.groups = [];
-                            this.createForm.form_config = cfg;
+                            this.createForm.form_config = this.ensureSpecialTopicOptionNone(this.normalizeInternetPlusFormConfig(cfg));
+                            this.ensureCreateFormSpecialTopicDefault();
                         }
                     } catch (e) {}
                 }
             } catch (e) {}
+        },
+        ensureSpecialTopicOptionNone(cfg) {
+            const c = cfg && typeof cfg === 'object' ? JSON.parse(JSON.stringify(cfg)) : null;
+            if (!c || !Array.isArray(c.groups)) return cfg;
+            let touched = false;
+            for (const g of c.groups) {
+                const fs = Array.isArray(g?.fields) ? g.fields : [];
+                for (const f of fs) {
+                    if (!f || String(f.key || '').trim() !== 'extra_info.special_topic') continue;
+                    const opts = Array.isArray(f.options) ? f.options : [];
+                    for (const opt of opts) {
+                        if (!opt || typeof opt !== 'object') continue;
+                        const label = String(opt.label || '').trim();
+                        const val = opt.value;
+                        if (label === '无' && (val === '' || val === null || val === undefined)) {
+                            opt.value = 'none';
+                            touched = true;
+                        }
+                    }
+                    f.options = opts;
+                }
+            }
+            return touched ? c : cfg;
+        },
+        ensureCreateFormSpecialTopicDefault() {
+            const cfg = this.createForm?.form_config;
+            const groups = cfg?.groups;
+            if (!Array.isArray(groups) || !groups.length) return;
+            let hasNone = false;
+            for (const g of groups) {
+                const fs = Array.isArray(g?.fields) ? g.fields : [];
+                for (const f of fs) {
+                    if (!f || String(f.key || '').trim() !== 'extra_info.special_topic') continue;
+                    const opts = Array.isArray(f.options) ? f.options : [];
+                    hasNone = opts.some(o => o && String(o.label || '').trim() === '无' && String(o.value || '').trim() === 'none');
+                    break;
+                }
+                if (hasNone) break;
+            }
+            if (!hasNone) return;
+            if (!this.createForm.extra_info) this.createForm.extra_info = {};
+            const cur = String(this.createForm.extra_info.special_topic || '').trim();
+            if (!cur) this.createForm.extra_info.special_topic = 'none';
         },
         onChallengeCupCategoryChange(newVal, oldVal) {
             const nv = String(newVal || '').trim();
@@ -9983,7 +10317,7 @@ const Dashboard = {
         },
         isAdvisorGroup(group) {
             const title = String(group?.title || '').trim();
-            return title.includes('指导教师');
+            return title.includes('指导教师') || title.includes('指导老师') || title === '导师信息';
         },
         getAdvisorRankLabel(idx) {
             if (idx === 0) return '第一指导教师';
@@ -10015,7 +10349,7 @@ const Dashboard = {
             if (!this.createForm.extra_info || typeof this.createForm.extra_info !== 'object') this.createForm.extra_info = {};
             const ei = this.createForm.extra_info;
             const ptype = String(this.createForm?.project_type || '').trim();
-            const maxCount = (ptype === 'entrepreneurship_training' || ptype === 'entrepreneurship_practice') ? 2 : 3;
+            const maxCount = (ptype === 'innovation') ? 1 : ((ptype === 'entrepreneurship_training' || ptype === 'entrepreneurship_practice') ? 2 : 3);
             if (!Array.isArray(ei.advisors) || ei.advisors.length === 0) {
                 const legacyInfo = ei.advisor_info || {};
                 const a0 = {
@@ -10055,7 +10389,7 @@ const Dashboard = {
             this.ensureCreateFormAdvisors();
             const ei = this.createForm.extra_info;
             const ptype = String(this.createForm?.project_type || '').trim();
-            const maxCount = (ptype === 'entrepreneurship_training' || ptype === 'entrepreneurship_practice') ? 2 : 3;
+            const maxCount = (ptype === 'innovation') ? 1 : ((ptype === 'entrepreneurship_training' || ptype === 'entrepreneurship_practice') ? 2 : 3);
             if (ei.advisors.length >= maxCount) return;
             ei.advisors.push({ name: '', work_id: '', title: '', org: '', guidance_type: '校内导师', research_area: '', admin_title: '', phone: '', email: '' });
             this.ensureCreateFormAdvisors();
@@ -10104,7 +10438,8 @@ const Dashboard = {
             if (!v(a?.title)) return false;
             if (!v(a?.org)) return false;
             if (this.shouldShowAdvisorGuidanceType && !v(a?.guidance_type)) return false;
-            if (!v(a?.research_area)) return false;
+            const gt = String(a?.guidance_type || '').trim();
+            if (gt !== '企业导师' && !v(a?.research_area)) return false;
             if (!v(a?.phone)) return false;
             return true;
         },
@@ -10116,23 +10451,32 @@ const Dashboard = {
             const advisors = this.createForm.extra_info.advisors;
             if (!Array.isArray(advisors) || advisors.length < 1) return { ok: false, message: '请至少填写1名指导教师信息' };
             if (advisors.length > 3) return { ok: false, message: '指导教师最多3人' };
+            const ptype = String(this.createForm?.project_type || '').trim();
+            if (ptype === 'innovation') {
+                if (advisors.length !== 1) return { ok: false, message: '大创创新训练项目必须且仅能绑定1名校内指导教师' };
+                if (String(advisors[0]?.guidance_type || '校内导师').trim() !== '校内导师') return { ok: false, message: '大创创新训练项目指导教师必须为校内导师' };
+                if (this.advisorTitleLevel(advisors[0]?.title) < 1) return { ok: false, message: '校内导师职称需为讲师或以上' };
+            }
             if (!this.isAdvisorComplete(advisors[0])) return { ok: false, message: '第一指导教师信息不完整' };
             for (let i = 1; i < advisors.length; i++) {
                 if (!this.isAdvisorComplete(advisors[i])) return { ok: false, message: `请完善指导教师${i + 1}信息或删除该指导教师` };
             }
-            const ptype = String(this.createForm?.project_type || '');
             if (ptype === 'entrepreneurship_training' || ptype === 'entrepreneurship_practice') {
                 if (advisors.length !== 2) return { ok: false, message: '创业类项目必须填写2位指导教师（校内+校外）' };
                 const types = advisors.map(a => String(a?.guidance_type || '').trim());
                 if (!types.includes('校内导师') || !types.includes('企业导师')) return { ok: false, message: '创业类项目指导教师类型必须包含校内导师与企业导师各1人' };
+                const internal = advisors.find(a => String(a?.guidance_type || '').trim() === '校内导师');
+                if (!internal) return { ok: false, message: '创业类项目需包含1名校内导师' };
+                if (this.advisorTitleLevel(internal?.title) < 1) return { ok: false, message: '校内导师职称需为讲师或以上' };
             }
             const cat = this.getMentorValidationCategory();
             if (cat === 'daitiao') {
                 const ok = advisors.some(a => this.advisorTitleLevel(a.title) >= 2);
                 if (!ok) return { ok: false, message: '大挑项目至少1名指导教师职称为副教授或以上' };
             } else if (cat === 'dachuang') {
-                const ok = advisors.some(a => this.advisorTitleLevel(a.title) >= 1);
-                if (!ok) return { ok: false, message: '大创项目至少1名指导教师职称为讲师或以上' };
+                const internal = advisors.find(a => String(a?.guidance_type || '').trim() !== '企业导师') || advisors[0];
+                const ok = this.advisorTitleLevel(internal?.title) >= 1;
+                if (!ok) return { ok: false, message: '大创项目校内导师职称需为讲师或以上' };
             }
             return { ok: true, message: '' };
         },
@@ -10458,6 +10802,12 @@ const Dashboard = {
         },
         handleReviewMgmtSelectionChange(selection) {
             this.selectedProjectIds = selection.map(item => item.id);
+            this.reviewMgmtPickedProjectId = this.selectedProjectIds.length ? this.selectedProjectIds[0] : null;
+        },
+        onReviewMgmtRowClick(row) {
+            const id = row?.id;
+            if (!id || isNaN(Number(id))) return;
+            this.reviewMgmtPickedProjectId = Number(id);
         },
         async confirmCollegeRecommendations() {
             if (this.selectedProjectIds.length === 0) {
@@ -11072,6 +11422,7 @@ const Dashboard = {
                         };
                     }
                 }
+                this.compForm.form_config = this.normalizeInternetPlusFormConfig(this.compForm.form_config);
                 // Ensure new fields exist for legacy data
             } else {
                 this.isEditingComp = false;
@@ -11114,6 +11465,7 @@ const Dashboard = {
                 ...this.compForm.form_config,
                 groups: this.currentFormConfig.groups
             };
+            this.compForm.form_config = this.normalizeInternetPlusFormConfig(this.compForm.form_config);
             this.showFormDesignerDialog = false;
             ElementPlus.ElMessage.success('表单配置已更新');
         },
@@ -11137,6 +11489,7 @@ const Dashboard = {
                     ...this.compForm.form_config,
                     ...preset.data.form_config
                 };
+                this.compForm.form_config = this.normalizeInternetPlusFormConfig(this.compForm.form_config);
                 
                 ElementPlus.ElMessage.success('已应用模板：' + preset.label);
             }
@@ -11183,7 +11536,8 @@ const Dashboard = {
             
             if (comp.form_config) {
                 try {
-                    this.createForm.form_config = (typeof comp.form_config === 'string') ? JSON.parse(comp.form_config) : comp.form_config;
+                    const cfg = (typeof comp.form_config === 'string') ? JSON.parse(comp.form_config) : comp.form_config;
+                    this.createForm.form_config = this.normalizeInternetPlusFormConfig(cfg);
                 } catch(e) {
                     console.error("Error parsing form_config", e);
                 }
@@ -12143,13 +12497,21 @@ const Dashboard = {
             try {
                 const defaultLevel = this.user?.role === 'school_approver' ? 'school' : 'college';
                 const level = (this.reviewMgmt?.level || defaultLevel) || 'college';
-                const firstVisible = Array.isArray(this.reviewManagementProjects) ? this.reviewManagementProjects[0] : null;
-                const payload = { review_level: level };
-                if (firstVisible?.id) payload.project_id = firstVisible.id;
-                const res = await axios.post('/api/reviews/test/bootstrap', payload);
-                const actualId = res.data?.project_id || firstVisible?.id || '-';
-                const created = Number(res.data?.created_tasks || 0);
-                ElementPlus.ElMessage.success(`已自动分配评审任务（${level === 'school' ? '校赛' : '学院赛'}，项目ID: ${actualId}，任务数: ${created}）`);
+                const res = await axios.post('/api/reviews/test/bootstrap', { review_level: level, all_pending: true });
+                const processed = Number(res.data?.processed_projects || 0);
+                const assignedProjects = Number(res.data?.assigned_projects || 0);
+                const createdTasks = Number(res.data?.created_tasks || 0);
+                const skippedAssigned = Number(res.data?.skipped_already_assigned || 0);
+                const skippedInvalid = Number(res.data?.skipped_invalid_stage || 0);
+                const skippedNoTeam = Number(res.data?.skipped_no_team || 0);
+                const skippedNoMembers = Number(res.data?.skipped_no_members || 0);
+                const skippedTerminal = Number(res.data?.skipped_terminal || 0);
+                const sampleIds = Array.isArray(res.data?.assigned_project_ids_sample) ? res.data.assigned_project_ids_sample : [];
+                const levelText = level === 'school' ? '校赛' : '学院赛';
+                let msg = `已批量分配评审任务（${levelText}）：处理 ${processed} 个，成功分配 ${assignedProjects} 个，新增任务 ${createdTasks} 条。跳过：已分配 ${skippedAssigned} 个，阶段不匹配 ${skippedInvalid} 个，无团队 ${skippedNoTeam} 个，无成员 ${skippedNoMembers} 个，已终止/结项 ${skippedTerminal} 个`;
+                if (sampleIds.length) msg += `（示例ID: ${sampleIds.join(', ')}）`;
+                if (createdTasks > 0) ElementPlus.ElMessage.success(msg);
+                else ElementPlus.ElMessage.warning(msg);
                 await this.fetchProjects();
                 await this.fetchMyReviewTasks();
             } catch (e) {
@@ -12339,6 +12701,7 @@ const Dashboard = {
                 if (template_type === 'challenge_cup' || form_config.groups.some(g => (g?.fields || []).some(f => f?.key === 'extra_info.collaborators_individual' || f?.key === 'extra_info.collaborators_team'))) {
                     form_config = this.normalizeChallengeCupFormConfig(form_config, project.extra_info || {});
                 }
+                form_config = this.ensureSpecialTopicOptionNone(form_config);
                 
                 // Populate createForm
                 this.createForm = {
@@ -12387,6 +12750,7 @@ const Dashboard = {
                 }
                 if (!this.createForm.extra_info) this.createForm.extra_info = {};
                 if (!this.createForm.extra_info.attachments) this.createForm.extra_info.attachments = {};
+                this.ensureCreateFormSpecialTopicDefault();
                 this.ensureCreateFormAdvisors();
                 if (template_type !== 'startup' && Array.isArray(this.createForm.members)) {
                     this.createForm.members = this.normalizeMembersForUi(this.createForm.members);
@@ -13299,7 +13663,15 @@ const Profile = {
                 <el-row :gutter="20">
                     <el-col :span="12">
                         <el-form-item label="邮箱">
-                            <el-input v-model="form.email"></el-input>
+                            <el-input v-model="emailBinding.email" placeholder="请输入邮箱"></el-input>
+                            <div style="margin-top: 8px; display: flex; gap: 8px;">
+                                <el-button size="small" :loading="sendingEmailCode" @click="sendBindEmailCode">发送验证码</el-button>
+                                <el-input v-model="emailBinding.code" size="small" placeholder="请输入验证码" style="max-width: 180px;"></el-input>
+                                <el-button size="small" type="primary" :loading="bindingEmail" @click="bindEmail">绑定邮箱</el-button>
+                            </div>
+                            <div style="margin-top: 6px; font-size: 12px; color: #909399;">
+                                当前已绑定：{{ form.email || '未绑定' }}
+                            </div>
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
@@ -13355,7 +13727,13 @@ const Profile = {
                 confirm_password: ''
             },
             updating: false,
-            changingPwd: false
+            changingPwd: false,
+            sendingEmailCode: false,
+            bindingEmail: false,
+            emailBinding: {
+                email: '',
+                code: ''
+            }
         }
     },
     mounted() {
@@ -13366,6 +13744,7 @@ const Profile = {
             try {
                 const res = await axios.get('/api/me');
                 this.form = { ...this.form, ...res.data };
+                this.emailBinding.email = this.form.email || '';
             } catch (error) {
                 console.error(error);
             }
@@ -13373,7 +13752,9 @@ const Profile = {
         async updateProfile() {
             this.updating = true;
             try {
-                await axios.put('/api/me', this.form);
+                const payload = { ...this.form };
+                delete payload.email;
+                await axios.put('/api/me', payload);
                 ElementPlus.ElMessage.success('个人信息更新成功');
             } catch (error) {
                 ElementPlus.ElMessage.error(error.response?.data?.error || '更新失败');
@@ -13381,9 +13762,52 @@ const Profile = {
                 this.updating = false;
             }
         },
+        async sendBindEmailCode() {
+            const email = String(this.emailBinding.email || '').trim();
+            if (!email || !email.includes('@')) {
+                ElementPlus.ElMessage.warning('请输入有效邮箱');
+                return;
+            }
+            this.sendingEmailCode = true;
+            try {
+                await axios.post('/api/auth/email_code/send', { scene: 'bind_email', email });
+                ElementPlus.ElMessage.success('验证码已发送，请查收邮箱');
+            } catch (error) {
+                ElementPlus.ElMessage.error(error.response?.data?.error || '发送失败');
+            } finally {
+                this.sendingEmailCode = false;
+            }
+        },
+        async bindEmail() {
+            const email = String(this.emailBinding.email || '').trim();
+            const code = String(this.emailBinding.code || '').trim();
+            if (!email || !email.includes('@')) {
+                ElementPlus.ElMessage.warning('请输入有效邮箱');
+                return;
+            }
+            if (!code) {
+                ElementPlus.ElMessage.warning('请输入验证码');
+                return;
+            }
+            this.bindingEmail = true;
+            try {
+                await axios.post('/api/me/bind_email', { email, code });
+                this.form.email = email;
+                this.emailBinding.code = '';
+                ElementPlus.ElMessage.success('邮箱绑定成功');
+            } catch (error) {
+                ElementPlus.ElMessage.error(error.response?.data?.error || '绑定失败');
+            } finally {
+                this.bindingEmail = false;
+            }
+        },
         async changePassword() {
             if (!this.pwdForm.old_password || !this.pwdForm.new_password) {
                 ElementPlus.ElMessage.warning('请输入完整密码信息');
+                return;
+            }
+            if (!String(this.form.email || '').trim()) {
+                ElementPlus.ElMessage.warning('请先绑定邮箱后再修改密码');
                 return;
             }
             if (this.pwdForm.new_password !== this.pwdForm.confirm_password) {
@@ -14202,14 +14626,41 @@ const ProjectDetailPage = {
 
                         <template v-else-if="activeSection === 'process'">
                             <template v-if="process">
-                                <div class="ds-table">
-                                    <el-table :data="processRows" border size="small" class="ds-w-full" v-loading="processLoading">
-                                        <el-table-column prop="node" label="节点" min-width="160"></el-table-column>
-                                        <el-table-column prop="status" label="状态" min-width="160"></el-table-column>
-                                        <el-table-column prop="award" label="等级" width="120"></el-table-column>
-                                        <el-table-column prop="comment" label="意见" min-width="220"></el-table-column>
-                                    </el-table>
-                                </div>
+                                <el-timeline v-loading="processLoading">
+                                    <el-timeline-item v-for="(node, index) in (process.process_structure || [])" :key="node" placement="top" :type="isProcessNodeUnlocked(index) ? 'primary' : 'info'">
+                                        <el-card :style="!isProcessNodeUnlocked(index) ? 'opacity: 0.6; pointer-events: none;' : ''" shadow="always">
+                                            <h4 style="margin: 0 0 10px 0;">
+                                                {{ node }}
+                                                <el-tag v-if="!isProcessNodeUnlocked(index)" size="small" type="info" effect="light" style="margin-left: 10px;">未解锁</el-tag>
+                                                <el-tag v-else-if="isProcessNodeCompleted(node)" size="small" type="success" effect="light" style="margin-left: 10px;">
+                                                    {{ getProcessStatusText(node, process.node_current_status?.[node]) }}
+                                                </el-tag>
+                                                <el-tag v-else size="small" type="warning" effect="light" style="margin-left: 10px;">当前阶段</el-tag>
+                                            </h4>
+                                            <el-form label-width="90px" v-if="isProcessNodeUnlocked(index)">
+                                                <el-form-item label="状态">
+                                                    <el-select v-if="canEditProcessNodeFor(node) && hasProcessStatusOptions(node)" v-model="process.node_current_status[node]" style="width: 100%">
+                                                        <el-option v-for="opt in (process.node_status_options && process.node_status_options[node] ? process.node_status_options[node] : [])" :key="opt" :label="getProcessStatusText(node, opt)" :value="opt"></el-option>
+                                                    </el-select>
+                                                    <div v-else style="width: 100%; min-height: 32px; line-height: 32px;">
+                                                        {{ getProcessStatusText(node, process.node_current_status?.[node]) || '—' }}
+                                                    </div>
+                                                </el-form-item>
+                                                <el-form-item label="获奖等级" v-if="process.node_current_status?.[node] === '已获奖' && process.award_levels && process.award_levels.length > 0">
+                                                    <el-select v-model="process.node_award_levels[node]" style="width: 100%" :disabled="!canEditProcessNodeFor(node)">
+                                                        <el-option v-for="level in process.award_levels" :key="level" :label="level" :value="level"></el-option>
+                                                    </el-select>
+                                                </el-form-item>
+                                                <el-form-item label="意见">
+                                                    <el-input v-model="process.node_comments[node]" type="textarea" :rows="2" :disabled="!canEditProcessNodeFor(node)"></el-input>
+                                                </el-form-item>
+                                                <el-form-item v-if="canEditProcessNodeFor(node)">
+                                                    <el-button size="small" type="primary" @click="saveProcessNode(node)" :loading="processSaving[node]">保存</el-button>
+                                                </el-form-item>
+                                            </el-form>
+                                        </el-card>
+                                    </el-timeline-item>
+                                </el-timeline>
                             </template>
                             <el-empty v-else description="暂无流程数据"></el-empty>
                         </template>
@@ -14240,7 +14691,8 @@ const ProjectDetailPage = {
             project: null,
             activeSection: 'basic',
             processLoading: false,
-            process: null
+            process: null,
+            processSaving: {}
         };
     },
     computed: {
@@ -14501,6 +14953,9 @@ const ProjectDetailPage = {
                     p.form_config = this.normalizeDetailFormConfig(p.form_config, p.extra_info);
                 }
                 this.project = p;
+                if (this.activeSection === 'process') {
+                    this.fetchProcess();
+                }
             } catch (e) {
                 this.project = null;
             } finally {
@@ -14513,11 +14968,287 @@ const ProjectDetailPage = {
             this.processLoading = true;
             try {
                 const res = await axios.get(`/api/projects/${this.projectId}/process`);
-                this.process = res.data || null;
+                const data = res.data || {};
+                if (!data.node_status_options) data.node_status_options = {};
+                if (!data.node_current_status) data.node_current_status = {};
+                if (!data.node_comments) data.node_comments = {};
+                if (!data.node_award_levels) data.node_award_levels = {};
+                const nodes = Array.isArray(data.process_structure) ? data.process_structure : [];
+                nodes.forEach(n => {
+                    if (data.node_current_status[n] === undefined || data.node_current_status[n] === null) data.node_current_status[n] = '';
+                    if (data.node_comments[n] === undefined || data.node_comments[n] === null) data.node_comments[n] = '';
+                    if (data.node_award_levels[n] === undefined || data.node_award_levels[n] === null) data.node_award_levels[n] = '';
+                });
+
+                if (['大创创新训练', '大学生创新创业训练计划'].includes(String(data.template_name || '').trim()) && this.project) {
+                    const p = this.project;
+                    const st = String(p.status || '').trim();
+                    const rejLv = String(p.extra_info?.rejection_level || '').trim();
+                    const teacherOpinion = String(p.extra_info?.advisor_feedback || '').trim();
+                    const collegeOpinion = String(p.college_feedback || p.extra_info?.college_feedback || '').trim();
+                    const schoolOpinion = String(p.school_feedback || p.extra_info?.school_feedback || '').trim();
+                    const fillIfEmpty = (node, v) => {
+                        if (!String(data.node_current_status[node] || '').trim()) data.node_current_status[node] = v;
+                    };
+                    const hasNode = (name) => nodes.includes(name);
+                    const fillIfExistsEmpty = (node, v) => {
+                        if (hasNode(node)) fillIfEmpty(node, v);
+                    };
+                    const fillStageIfExistsEmpty = (node, v) => {
+                        if (!hasNode(node)) return;
+                        if (!String(data.node_current_status[node] || '').trim()) data.node_current_status[node] = v;
+                    };
+                    const fillCommentIfExistsEmpty = (node, v) => {
+                        if (!hasNode(node)) return;
+                        if (!String(data.node_comments[node] || '').trim()) data.node_comments[node] = v;
+                    };
+                    const fillApplySubmitted = () => {
+                        fillIfExistsEmpty('学生申报', '已提交');
+                        fillIfExistsEmpty('申报', '已提交');
+                    };
+                    if (st === 'pending_teacher') {
+                        if (hasNode('学生申报')) {
+                            fillIfExistsEmpty('学生申报', '已提交');
+                            fillIfExistsEmpty('导师审核', '待审核');
+                        } else if (hasNode('申报')) {
+                            fillIfExistsEmpty('申报', '待审核');
+                        }
+                        fillStageIfExistsEmpty('申报', '待审核');
+                    }
+                    if (st === 'pending_college') {
+                        fillApplySubmitted();
+                        fillIfEmpty('导师审核', '通过');
+                        fillIfEmpty('学院资格审核', '待审核');
+                        fillStageIfExistsEmpty('申报', '通过');
+                        fillStageIfExistsEmpty('学院评审', '待审核');
+                        if (teacherOpinion) fillCommentIfExistsEmpty('申报', teacherOpinion);
+                        if (collegeOpinion) fillCommentIfExistsEmpty('学院评审', collegeOpinion);
+                    }
+                    if (st === 'reviewing') {
+                        fillApplySubmitted();
+                        fillIfEmpty('导师审核', '通过');
+                        fillIfEmpty('学院资格审核', '通过');
+                        fillIfEmpty('学院评审答辩', '待答辩');
+                        fillStageIfExistsEmpty('申报', '通过');
+                        fillStageIfExistsEmpty('学院评审', '学院评审中');
+                        if (teacherOpinion) fillCommentIfExistsEmpty('申报', teacherOpinion);
+                        if (collegeOpinion) fillCommentIfExistsEmpty('学院评审', collegeOpinion);
+                    }
+                    if (st === 'college_recommended') {
+                        fillApplySubmitted();
+                        fillIfEmpty('导师审核', '通过');
+                        fillIfEmpty('学院资格审核', '通过');
+                        fillIfEmpty('学院评审答辩', '已评分');
+                        fillIfEmpty('学院排序', '已推荐');
+                        fillIfEmpty('学校复审', '待复审');
+                        fillStageIfExistsEmpty('申报', '通过');
+                        fillStageIfExistsEmpty('学院评审', '通过');
+                        fillStageIfExistsEmpty('学校立项', '待审核');
+                        if (teacherOpinion) fillCommentIfExistsEmpty('申报', teacherOpinion);
+                        if (collegeOpinion) fillCommentIfExistsEmpty('学院评审', collegeOpinion);
+                        if (schoolOpinion) fillCommentIfExistsEmpty('学校立项', schoolOpinion);
+                    }
+                    if (st === 'approved') {
+                        fillApplySubmitted();
+                        fillIfEmpty('导师审核', '通过');
+                        fillIfEmpty('学院资格审核', '通过');
+                        fillIfEmpty('学校复审', '通过');
+                        fillIfEmpty('立项', '待立项');
+                        fillStageIfExistsEmpty('申报', '通过');
+                        fillStageIfExistsEmpty('学院评审', '通过');
+                        fillStageIfExistsEmpty('学校立项', '通过');
+                        if (teacherOpinion) fillCommentIfExistsEmpty('申报', teacherOpinion);
+                        if (collegeOpinion) fillCommentIfExistsEmpty('学院评审', collegeOpinion);
+                        if (schoolOpinion) fillCommentIfExistsEmpty('学校立项', schoolOpinion);
+                    }
+                    if (st === 'rated') {
+                        fillApplySubmitted();
+                        fillIfEmpty('导师审核', '通过');
+                        fillIfEmpty('学院资格审核', '通过');
+                        fillIfEmpty('学校复审', '通过');
+                        fillIfEmpty('立项', '已立项');
+                        fillStageIfExistsEmpty('申报', '通过');
+                        fillStageIfExistsEmpty('学院评审', '通过');
+                        fillStageIfExistsEmpty('学校立项', '已立项');
+                        if (teacherOpinion) fillCommentIfExistsEmpty('申报', teacherOpinion);
+                        if (collegeOpinion) fillCommentIfExistsEmpty('学院评审', collegeOpinion);
+                        if (schoolOpinion) fillCommentIfExistsEmpty('学校立项', schoolOpinion);
+                    }
+                    if (st === 'rejected') {
+                        fillApplySubmitted();
+                        if (rejLv === '导师' || rejLv === '指导教师') fillIfEmpty('导师审核', '驳回');
+                        if (rejLv === '学院') fillIfEmpty('学院资格审核', '驳回');
+                        if (rejLv === '学校') fillIfEmpty('学校复审', '驳回');
+                        if (rejLv === '导师' || rejLv === '指导教师') {
+                            fillStageIfExistsEmpty('申报', '驳回');
+                        } else if (rejLv === '学院') {
+                            fillStageIfExistsEmpty('申报', '通过');
+                            fillStageIfExistsEmpty('学院评审', '驳回');
+                        } else if (rejLv === '学校') {
+                            fillStageIfExistsEmpty('申报', '通过');
+                            fillStageIfExistsEmpty('学院评审', '通过');
+                            fillStageIfExistsEmpty('学校立项', '驳回');
+                        }
+                        if (teacherOpinion) fillCommentIfExistsEmpty('申报', teacherOpinion);
+                        if (collegeOpinion) fillCommentIfExistsEmpty('学院评审', collegeOpinion);
+                        if (schoolOpinion) fillCommentIfExistsEmpty('学校立项', schoolOpinion);
+                    }
+                }
+
+                if (['大挑', '“挑战杯”全国大学生课外学术科技作品竞赛', 'challenge_cup'].includes(String(data.template_name || '').trim()) && this.project) {
+                    const p = this.project;
+                    const cr = String(p.college_review_result || '').trim();
+                    const sr = String(p.school_review_result || '').trim();
+                    const st = String(p.status || '').trim();
+                    const deptOpinion = String(p.department_head_opinion || '').trim();
+                    const researchOpinion = String(p.research_admin_opinion || '').trim();
+                    const ensureOption = (node, opt) => {
+                        if (!node || !opt) return;
+                        if (!data.node_status_options) data.node_status_options = {};
+                        if (!Array.isArray(data.node_status_options[node])) data.node_status_options[node] = [];
+                        if (!data.node_status_options[node].includes(opt)) data.node_status_options[node].push(opt);
+                    };
+                    if (data.process_structure && data.process_structure.includes('学院赛')) {
+                        if (deptOpinion && !String(data.node_comments?.['学院赛'] || '').trim()) data.node_comments['学院赛'] = deptOpinion;
+                        const cur = String(data.node_current_status?.['学院赛'] || '').trim();
+                        const isRec = (cr === 'approved') || (cur === '已推荐');
+                        const isNotRec = (cr === 'rejected') || (cur === '未推荐');
+                        if (isRec) {
+                            data.node_current_status['学院赛'] = (String(data.node_comments?.['学院赛'] || '').trim() ? '已推荐' : '待推荐');
+                            if (data.node_current_status['学院赛'] === '待推荐') ensureOption('学院赛', '待推荐');
+                        }
+                        else if (isNotRec) data.node_current_status['学院赛'] = '未推荐';
+                        else if (st === 'pending' || st === 'under_review' || st === 'pending_college' || st === 'reviewing') data.node_current_status['学院赛'] = '待评审';
+                    }
+                    if (data.process_structure && data.process_structure.includes('校赛')) {
+                        if (researchOpinion && !String(data.node_comments?.['校赛'] || '').trim()) data.node_comments['校赛'] = researchOpinion;
+                        const cur = String(data.node_current_status?.['校赛'] || '').trim();
+                        const isRec = (sr === 'approved') || (cur === '已推荐');
+                        const isNotRec = (sr === 'rejected') || (cur === '未推荐');
+                        if (isRec) {
+                            data.node_current_status['校赛'] = (String(data.node_comments?.['校赛'] || '').trim() ? '已推荐' : '待推荐');
+                            if (data.node_current_status['校赛'] === '待推荐') ensureOption('校赛', '待推荐');
+                        }
+                        else if (isNotRec) data.node_current_status['校赛'] = '未推荐';
+                        else if (cr === 'approved') data.node_current_status['校赛'] = '待评审';
+                    }
+                    if (data.process_structure && data.process_structure.includes('省赛')) {
+                        const cur = String(data.node_current_status?.['省赛'] || '').trim();
+                        const provStatus = String(p.provincial_status || '').trim();
+                        const hasProvincialAward = String(p.provincial_award_level || '').trim() && String(p.provincial_award_level || '').trim() !== 'none';
+                        const lv2 = String(p.current_level || '').trim();
+                        const stage2 = String(p.review_stage || '').trim();
+                        const st2 = String(p.status || '').trim();
+                        const inProvStage = (lv2 === 'provincial' || stage2 === 'provincial' || st2 === 'provincial_review' || st2 === 'provincial');
+                        if (provStatus === '已晋级' || p.provincial_advance_national) data.node_current_status['省赛'] = '已晋级';
+                        else if (provStatus === '未晋级') data.node_current_status['省赛'] = '未晋级';
+                        else if (provStatus === '已获奖' || hasProvincialAward) data.node_current_status['省赛'] = '未晋级';
+                        else if (sr === 'approved' || inProvStage) data.node_current_status['省赛'] = '待评审';
+                        else data.node_current_status['省赛'] = cur;
+                    }
+                    if (data.process_structure && data.process_structure.includes('国赛')) {
+                        if ((data.node_current_status['省赛'] || '').trim() === '已晋级' && !(data.node_current_status['国赛'] || '').trim()) {
+                            data.node_current_status['国赛'] = '待评审';
+                        }
+                    }
+                }
+
+                this.process = data || null;
             } catch (e) {
                 this.process = null;
             } finally {
                 this.processLoading = false;
+            }
+        },
+        isProcessStatusCompleted(status) {
+            if (!status) return false;
+            const s = String(status).trim();
+            if (!s) return false;
+            if (s.startsWith('待')) return false;
+            if (s.includes('评审中') || s.includes('审核中') || s.includes('进行中')) return false;
+            if (s.includes('未') || s.includes('驳回') || s.includes('不通过')) return false;
+            return true;
+        },
+        isProcessNodeCompleted(nodeName) {
+            const s = this.process?.node_current_status ? this.process.node_current_status[nodeName] : null;
+            return this.isProcessStatusCompleted(s);
+        },
+        isProcessNodeUnlocked(index) {
+            if (index === 0) return true;
+            if (!this.process || !this.process.process_structure) return false;
+            const prevNode = this.process.process_structure[index - 1];
+            const prevStatus = this.process.node_current_status ? this.process.node_current_status[prevNode] : null;
+            return this.isProcessStatusCompleted(prevStatus);
+        },
+        canEditProcessNode() {
+            const u = this.user || {};
+            const role = u.active_role || u.role;
+            return !!role && ['project_admin', 'system_admin'].includes(role);
+        },
+        hasProcessStatusOptions(nodeName) {
+            const opts = this.process?.node_status_options ? this.process.node_status_options[nodeName] : null;
+            return Array.isArray(opts) && opts.length > 0;
+        },
+        getProcessStatusText(nodeName, statusValue) {
+            const tpl = this.process?.template_name || '';
+            const m1 = (tpl === '大学生创新创业训练计划' ? (PROCESS_STATUS_TEXT_MAP['大创创新训练'] || {}) : (PROCESS_STATUS_TEXT_MAP[tpl] || {}));
+            const m2 = m1[nodeName] || {};
+            return m2[statusValue] || statusValue || '';
+        },
+        canEditProcessNodeFor(nodeName) {
+            if (!this.canEditProcessNode()) return false;
+            const u = this.user || {};
+            const role = u.active_role || u.role;
+            const tplName = this.process?.template_name;
+            const p = this.project || {};
+            const lv = String(p.current_level || '').trim();
+            const st = String(p.status || '').trim();
+
+            if ((tplName === '大挑' || tplName === '“挑战杯”全国大学生课外学术科技作品竞赛') && nodeName === '学院赛') {
+                if (!['college_approver', 'project_admin', 'system_admin'].includes(role)) return false;
+                if (lv && lv !== 'college') return false;
+                if (st && ['provincial_review', 'provincial', 'finished_national_award'].includes(st)) return false;
+                return true;
+            }
+            if ((tplName === '大挑' || tplName === '“挑战杯”全国大学生课外学术科技作品竞赛') && ['校赛', '省赛', '国赛'].includes(nodeName)) {
+                if (!['school_approver', 'project_admin', 'system_admin'].includes(role)) return false;
+                if (nodeName === '校赛') {
+                    if (lv && lv !== 'school') return false;
+                    if (st && ['provincial_review', 'provincial', 'finished_national_award'].includes(st)) return false;
+                    return true;
+                }
+                if (nodeName === '省赛') return lv === 'provincial';
+                if (nodeName === '国赛') return lv === 'national';
+                return false;
+            }
+            if ([
+                '国创赛', '中国国际大学生创新大赛', 'internet_plus',
+                '小挑', '“挑战杯”中国大学生创业计划竞赛', 'youth_challenge',
+                '三创赛常规赛', '全国大学生电子商务“创新、创意及创业”挑战赛·常规赛', 'three_creativity_regular',
+                '三创赛实战赛', '全国大学生电子商务“创新、创意及创业”挑战赛·实战赛', 'three_creativity_practical'
+            ].includes(tplName)) {
+                return ['school_approver', 'project_admin', 'system_admin'].includes(role);
+            }
+            return ['project_admin', 'system_admin'].includes(role);
+        },
+        async saveProcessNode(nodeName) {
+            if (!this.projectId || !this.process?.node_current_status) return;
+            const dataToSend = {
+                node_name: nodeName,
+                current_status: this.process.node_current_status[nodeName] || '',
+                comment: (this.process.node_comments && this.process.node_comments[nodeName]) ? this.process.node_comments[nodeName] : '',
+                award_level: (this.process.node_award_levels && this.process.node_award_levels[nodeName]) ? this.process.node_award_levels[nodeName] : ''
+            };
+            this.processSaving[nodeName] = true;
+            try {
+                await axios.put(`/api/projects/${this.projectId}/process`, dataToSend);
+                ElementPlus.ElMessage.success('保存成功');
+                await this.fetchProject();
+                await this.fetchProcess();
+            } catch (e) {
+                ElementPlus.ElMessage.error(e.response?.data?.message || e.response?.data?.error || e?.message || '保存失败');
+            } finally {
+                this.processSaving[nodeName] = false;
             }
         },
         getValue(key) {

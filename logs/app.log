@@ -2473,3 +2473,174 @@ sqlite3.IntegrityError: FOREIGN KEY constraint failed
 2026-04-07 11:48:29,961 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
 2026-04-07 11:48:47,237 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
 2026-04-07 11:49:02,332 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-07 12:34:34,534 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-07 21:21:45,145 - app - INFO - [views.py:1860] - Bootstrap reviews for project None at level college
+2026-04-07 21:21:45,146 - app - INFO - [views.py:1888] - Fallback to project 29
+2026-04-08 21:33:55,495 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-08 21:34:07,488 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-08 21:34:11,511 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-08 21:34:13,426 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-08 21:34:15,305 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-08 21:34:56,270 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-08 21:34:58,281 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 17:34:29,050 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 17:34:29,930 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 17:51:35,615 - app - INFO - [views.py:1829] - Checking initial status: competition_id=16, p_type=innovation
+2026-04-09 17:56:15,083 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 18:02:38,602 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 18:02:58,414 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 18:03:09,161 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 18:04:58,100 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 18:07:38,155 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 18:20:14,287 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 18:24:50,492 - app - INFO - [views.py:1829] - Checking initial status: competition_id=19, p_type=innovation
+2026-04-09 18:25:25,726 - app - INFO - [views.py:97] - Admin College: 计算机学院（人工智能学院）, Role: college_approver
+2026-04-09 18:25:53,016 - app - INFO - [views.py:97] - Admin College: 计算机学院（人工智能学院）, Role: college_approver
+2026-04-09 18:26:14,785 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 18:26:23,742 - app - INFO - [views.py:97] - Admin College: 计算机学院（人工智能学院）, Role: college_approver
+2026-04-09 18:26:25,866 - app - INFO - [views.py:97] - Admin College: 计算机学院（人工智能学院）, Role: college_approver
+2026-04-09 18:28:07,513 - app - INFO - [views.py:97] - Admin College: 计算机学院（人工智能学院）, Role: college_approver
+2026-04-09 18:28:10,335 - app - INFO - [views.py:97] - Admin College: 计算机学院（人工智能学院）, Role: college_approver
+2026-04-09 18:28:29,210 - app - INFO - [views.py:1860] - Bootstrap reviews for project None at level college
+2026-04-09 18:28:29,211 - app - INFO - [views.py:1888] - Fallback to project 30
+2026-04-09 18:42:26,745 - app - INFO - [views.py:97] - Admin College: 计算机学院（人工智能学院）, Role: college_approver
+2026-04-09 18:50:13,754 - app - INFO - [views.py:1860] - Bootstrap reviews for project None at level college
+2026-04-09 18:50:13,755 - app - INFO - [views.py:1888] - Fallback to project 31
+2026-04-09 18:56:54,947 - app - INFO - [views.py:97] - Admin College: 计算机学院（人工智能学院）, Role: college_approver
+2026-04-09 18:59:18,464 - app - INFO - [views.py:97] - Admin College: 计算机学院（人工智能学院）, Role: college_approver
+2026-04-09 19:01:44,807 - app - INFO - [views.py:97] - Admin College: 计算机学院（人工智能学院）, Role: college_approver
+2026-04-09 19:02:39,650 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 19:03:02,437 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 19:03:16,213 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 19:05:06,127 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 19:07:39,138 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 19:10:59,076 - app - INFO - [views.py:97] - Admin College: 计算机学院（人工智能学院）, Role: college_approver
+2026-04-09 19:11:22,388 - app - INFO - [views.py:1860] - Bootstrap reviews for project None at level school
+2026-04-09 19:11:22,389 - app - INFO - [views.py:1888] - Fallback to project 31
+2026-04-09 19:11:42,241 - app - INFO - [views.py:97] - Admin College: 计算机学院（人工智能学院）, Role: college_approver
+2026-04-09 19:11:49,398 - app - INFO - [views.py:1860] - Bootstrap reviews for project None at level school
+2026-04-09 19:11:49,398 - app - INFO - [views.py:1888] - Fallback to project 31
+2026-04-09 19:12:40,278 - app - INFO - [views.py:1860] - Bootstrap reviews for project None at level school
+2026-04-09 19:12:40,279 - app - INFO - [views.py:1888] - Fallback to project 31
+2026-04-09 19:13:43,577 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 19:22:25,986 - app - INFO - [views.py:1860] - Bootstrap reviews for project None at level school
+2026-04-09 19:22:25,986 - app - INFO - [views.py:1888] - Fallback to project 31
+2026-04-09 19:22:29,608 - app - INFO - [views.py:1860] - Bootstrap reviews for project None at level school
+2026-04-09 19:22:29,608 - app - INFO - [views.py:1888] - Fallback to project 31
+2026-04-09 19:26:13,743 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 19:26:15,612 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 19:27:06,720 - app - INFO - [views.py:1860] - Bootstrap reviews for project None at level school
+2026-04-09 19:27:06,720 - app - INFO - [views.py:1888] - Fallback to project 31
+2026-04-09 19:27:10,963 - app - INFO - [views.py:1860] - Bootstrap reviews for project None at level school
+2026-04-09 19:27:10,964 - app - INFO - [views.py:1888] - Fallback to project 31
+2026-04-09 19:27:21,515 - app - INFO - [views.py:1860] - Bootstrap reviews for project None at level school
+2026-04-09 19:27:21,515 - app - INFO - [views.py:1888] - Fallback to project 31
+2026-04-09 19:27:28,808 - app - INFO - [views.py:1860] - Bootstrap reviews for project None at level school
+2026-04-09 19:27:28,808 - app - INFO - [views.py:1888] - Fallback to project 31
+2026-04-09 20:02:40,078 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 20:03:07,933 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 20:03:17,704 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 20:05:07,668 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 20:07:39,722 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 20:14:18,895 - app - INFO - [views.py:1860] - Bootstrap reviews for project None at level school
+2026-04-09 20:14:18,895 - app - INFO - [views.py:1888] - Fallback to project 31
+2026-04-09 20:14:23,966 - app - INFO - [views.py:1860] - Bootstrap reviews for project None at level school
+2026-04-09 20:14:23,967 - app - INFO - [views.py:1888] - Fallback to project 31
+2026-04-09 20:17:38,531 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 20:21:35,814 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 20:21:40,615 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 20:22:30,276 - app - INFO - [views.py:2044] - Bootstrap reviews for project None at level school
+2026-04-09 20:22:30,276 - app - INFO - [views.py:2072] - Fallback to project 31
+2026-04-09 20:24:30,713 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 20:26:20,626 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 20:32:00,022 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 20:33:25,820 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 20:33:27,609 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 20:33:51,639 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 20:34:29,914 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 20:34:30,102 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 20:35:30,997 - app - INFO - [views.py:2045] - Bootstrap reviews for project None at level college
+2026-04-09 20:36:16,123 - app - INFO - [views.py:2045] - Bootstrap reviews for project None at level school
+2026-04-09 20:37:15,590 - app - INFO - [views.py:2045] - Bootstrap reviews for project None at level school
+2026-04-09 21:02:44,258 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 21:02:45,144 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 21:03:09,069 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 21:03:09,270 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 21:03:18,871 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 21:03:19,393 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 21:05:08,838 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 21:05:08,849 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 21:07:39,871 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 21:07:40,614 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 21:13:18,179 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 21:13:18,765 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 21:21:35,857 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 21:21:36,624 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 21:22:11,672 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 21:22:11,780 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 21:22:25,957 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 21:22:26,439 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 21:25:16,511 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 21:25:16,644 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 21:26:27,060 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 21:26:27,454 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 21:31:59,849 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 21:32:00,337 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 21:35:41,057 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 21:35:41,142 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 21:49:09,192 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 21:49:09,322 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 22:02:44,728 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 22:02:45,317 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 22:03:14,471 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 22:03:14,569 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 22:03:24,523 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 22:03:24,582 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 22:05:14,171 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 22:05:14,532 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 22:07:40,515 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 22:07:40,690 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 22:21:39,775 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 22:21:40,480 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 22:26:34,040 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 22:26:34,525 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 22:49:14,118 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 22:49:14,205 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 22:51:42,775 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 22:51:43,434 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 23:02:45,276 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 23:02:45,444 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 23:03:14,383 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 23:03:14,473 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 23:03:24,224 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 23:03:24,798 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 23:05:15,250 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 23:05:15,330 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 23:07:40,068 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 23:07:40,293 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 23:07:42,078 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 23:07:42,174 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 23:15:11,703 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-09 23:15:11,864 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-10 07:54:23,960 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-28 16:36:43,466 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-28 16:36:45,760 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-29 15:14:26,863 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-29 15:14:30,740 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-29 16:00:29,010 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-29 16:00:31,313 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-29 16:14:40,368 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-29 16:14:42,592 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-04-29 22:38:03,561 - app - INFO - [views.py:2045] - Bootstrap reviews for project None at level school
+2026-05-01 09:55:13,710 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-05-01 09:55:16,885 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-05-01 18:10:53,247 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-05-01 18:34:31,490 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-05-01 18:59:32,080 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-05-01 18:59:34,317 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-05-03 14:46:52,214 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-05-03 14:46:58,301 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-05-03 15:05:37,362 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-05-03 23:20:59,772 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-05-03 23:21:05,397 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log
+2026-05-04 12:11:41,322 - app - INFO - [logs.py:46] - Logging system initialized. Log file: D:\桌面\new12\logs\app.log

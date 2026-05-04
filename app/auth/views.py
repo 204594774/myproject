@@ -7,6 +7,11 @@ from config import get_config
 from flasgger import swag_from
 import sqlite3
 import json
+import os
+import random
+import smtplib
+from datetime import datetime, timedelta
+from email.message import EmailMessage
 
 config = get_config()
 ROLES = config.ROLES
@@ -20,6 +25,139 @@ def log_action(conn, user_id, action, details, ip_address):
                     (user_id, action, details, ip_address))
     except Exception as e:
         print(f"LOG ERROR: {e}")
+
+def _now_text():
+    return datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+
+def _gen_verify_code():
+    return f"{random.randint(0, 999999):06d}"
+
+def _send_email(to_email, subject, content):
+    smtp_host = (os.getenv('SMTP_HOST') or '').strip()
+    smtp_port = int((os.getenv('SMTP_PORT') or '465').strip() or '465')
+    smtp_user = (os.getenv('SMTP_USER') or '').strip()
+    smtp_pass = (os.getenv('SMTP_PASS') or '').strip()
+    smtp_sender = (os.getenv('SMTP_SENDER') or smtp_user).strip()
+    use_ssl = (os.getenv('SMTP_SSL') or '1').strip().lower() not in ['0', 'false', 'no']
+    if not smtp_host or not smtp_user or not smtp_pass or not smtp_sender:
+        return False, '邮件服务未配置'
+    msg = EmailMessage()
+    msg['Subject'] = subject
+    msg['From'] = smtp_sender
+    msg['To'] = to_email
+    msg.set_content(content)
+    try:
+        if use_ssl:
+            with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=10) as server:
+                server.login(smtp_user, smtp_pass)
+                server.send_message(msg)
+        else:
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
+                server.starttls()
+                server.login(smtp_user, smtp_pass)
+                server.send_message(msg)
+        return True, ''
+    except Exception as e:
+        return False, str(e)
+
+def _verify_code(conn, user_id, email, scene, code):
+    row = conn.execute(
+        '''
+        SELECT id, code_hash, expires_at
+        FROM email_verification_codes
+        WHERE user_id = ? AND email = ? AND scene = ? AND used = 0
+        ORDER BY id DESC
+        LIMIT 1
+        ''',
+        (user_id, email, scene)
+    ).fetchone()
+    if not row:
+        return None
+    r = dict(row)
+    expires_at = datetime.strptime(r['expires_at'], '%Y-%m-%d %H:%M:%S')
+    if datetime.utcnow() > expires_at:
+        return None
+    if not check_password_hash(r['code_hash'], str(code or '').strip()):
+        return None
+    return r['id']
+
+@auth_bp.route('/auth/email_code/send', methods=['POST'])
+def send_email_code():
+    data = request.json or {}
+    scene = (data.get('scene') or '').strip()
+    if scene not in ['bind_email', 'forgot_password']:
+        return fail('验证码场景不合法', 400)
+
+    conn = get_db_connection()
+    user_id = session.get('user_id')
+    email = ''
+    username = ''
+    if scene == 'forgot_password':
+        username = (data.get('username') or '').strip()
+        if not username:
+            return fail('请输入学号/工号', 400)
+        user_row = conn.execute(
+            '''
+            SELECT id, username, email, status
+            FROM users
+            WHERE username = ? OR identity_number = ?
+            LIMIT 1
+            ''',
+            (username, username)
+        ).fetchone()
+        if not user_row:
+            return fail('账号不存在', 404)
+        user = dict(user_row)
+        if (user.get('status') or '') == 'disabled':
+            return fail('账号已禁用', 403)
+        if not (user.get('email') or '').strip():
+            return fail('该账号未绑定邮箱，请先在个人中心绑定邮箱', 400)
+        user_id = user['id']
+        email = (user.get('email') or '').strip()
+        username = (user.get('username') or '').strip()
+    else:
+        if not user_id:
+            return fail('请先登录', 401)
+        email = (data.get('email') or '').strip()
+        if not email or '@' not in email:
+            return fail('请输入有效邮箱', 400)
+        me = conn.execute('SELECT username, status FROM users WHERE id = ?', (user_id,)).fetchone()
+        if not me:
+            return fail('用户不存在', 404)
+        if (me['status'] or '') == 'disabled':
+            return fail('账号已禁用', 403)
+        username = (me['username'] or '').strip()
+
+    code = _gen_verify_code()
+    code_hash = generate_password_hash(code)
+    expires_at = (datetime.utcnow() + timedelta(minutes=10)).strftime('%Y-%m-%d %H:%M:%S')
+    now_text = _now_text()
+    try:
+        conn.execute(
+            'DELETE FROM email_verification_codes WHERE user_id = ? AND email = ? AND scene = ?',
+            (user_id, email, scene)
+        )
+        conn.execute(
+            '''
+            INSERT INTO email_verification_codes (user_id, email, scene, code_hash, expires_at, used, created_at)
+            VALUES (?, ?, ?, ?, ?, 0, ?)
+            ''',
+            (user_id, email, scene, code_hash, expires_at, now_text)
+        )
+        subject = '邮箱验证码'
+        body = f'账号：{username}\n场景：{"找回密码" if scene == "forgot_password" else "绑定邮箱"}\n验证码：{code}\n有效期：10分钟'
+        ok, err = _send_email(email, subject, body)
+        if not ok:
+            conn.rollback()
+            return fail(f'发送失败：{err}', 500)
+        conn.commit()
+        return success(message='验证码已发送，请注意查收（10分钟内有效）')
+    except Exception as e:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        return fail(str(e), 500)
 
 @auth_bp.route('/login', methods=['POST'])
 @swag_from({
@@ -101,22 +239,40 @@ def login():
 def forgot_password():
     data = request.json or {}
     username = (data.get('username') or '').strip()
+    code = (data.get('code') or '').strip()
     if not username:
-        return fail('请输入工号/学号', 400)
+        return fail('请输入学号/工号', 400)
+    if not code:
+        return fail('请输入邮箱验证码', 400)
 
     conn = get_db_connection()
     try:
-        user_row = conn.execute('SELECT id, status, real_name, college, role FROM users WHERE username = ?', (username,)).fetchone()
+        user_row = conn.execute(
+            '''
+            SELECT id, username, email, status, real_name, college, role
+            FROM users
+            WHERE username = ? OR identity_number = ?
+            LIMIT 1
+            ''',
+            (username, username)
+        ).fetchone()
         if not user_row:
             return fail('账号不存在', 404)
         user = dict(user_row)
         if (user.get('status') or '') == 'disabled':
             return fail('账号已禁用', 403)
+        email = (user.get('email') or '').strip()
+        if not email:
+            return fail('该账号未绑定邮箱，请先在个人中心绑定邮箱', 400)
+        code_id = _verify_code(conn, user['id'], email, 'forgot_password', code)
+        if not code_id:
+            return fail('验证码错误或已过期', 400)
 
         conn.execute('UPDATE users SET password = ? WHERE id = ?', (generate_password_hash('123456'), user['id']))
+        conn.execute('UPDATE email_verification_codes SET used = 1 WHERE id = ?', (code_id,))
 
         title = '密码重置提醒'
-        content = f'账号「{username}」已通过“忘记密码”重置为默认密码，请提醒用户尽快修改。'
+        content = f'账号「{user.get("username") or username}」已通过“忘记密码”重置为默认密码，请提醒用户尽快修改。'
         admin_roles = [ROLES['SYSTEM_ADMIN'], ROLES['PROJECT_ADMIN'], ROLES['SCHOOL_APPROVER']]
         rows = conn.execute(
             f"SELECT id FROM users WHERE status != 'disabled' AND role IN ({','.join(['?'] * len(admin_roles))})",
@@ -321,7 +477,7 @@ def get_me():
 def update_my_profile():
     user_id = session.get('user_id')
     data = request.json
-    allowed_fields = ['real_name', 'college', 'department', 'personal_info', 'email', 'phone', 'identity_number', 'teaching_office', 'research_area']
+    allowed_fields = ['real_name', 'college', 'department', 'personal_info', 'phone', 'identity_number', 'teaching_office', 'research_area']
     
     conn = get_db_connection()
     try:
@@ -340,6 +496,38 @@ def update_my_profile():
         conn.commit()
         return success(message='个人信息更新成功')
     except Exception as e:
+        return fail(str(e), 500)
+
+@auth_bp.route('/me/bind_email', methods=['POST'])
+@login_required
+def bind_my_email():
+    user_id = session.get('user_id')
+    data = request.json or {}
+    email = (data.get('email') or '').strip()
+    code = (data.get('code') or '').strip()
+    if not email or '@' not in email:
+        return fail('请输入有效邮箱', 400)
+    if not code:
+        return fail('请输入邮箱验证码', 400)
+    conn = get_db_connection()
+    try:
+        user = conn.execute('SELECT id, status FROM users WHERE id = ?', (user_id,)).fetchone()
+        if not user:
+            return fail('用户不存在', 404)
+        if (user['status'] or '') == 'disabled':
+            return fail('账号已禁用', 403)
+        code_id = _verify_code(conn, user_id, email, 'bind_email', code)
+        if not code_id:
+            return fail('验证码错误或已过期', 400)
+        conn.execute('UPDATE users SET email = ? WHERE id = ?', (email, user_id))
+        conn.execute('UPDATE email_verification_codes SET used = 1 WHERE id = ?', (code_id,))
+        conn.commit()
+        return success(message='邮箱绑定成功')
+    except Exception as e:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
         return fail(str(e), 500)
 
 @auth_bp.route('/switch_role', methods=['POST'])
@@ -401,7 +589,11 @@ def change_my_password():
         return fail('请提供新旧密码', 400)
         
     conn = get_db_connection()
-    user = conn.execute('SELECT password FROM users WHERE id = ?', (user_id,)).fetchone()
+    user = conn.execute('SELECT password, email FROM users WHERE id = ?', (user_id,)).fetchone()
+    if not user:
+        return fail('用户不存在', 404)
+    if not (user['email'] or '').strip():
+        return fail('请先绑定邮箱后再修改密码', 400)
     
     if user and check_password_hash(user['password'], old_password):
         hashed_new_password = generate_password_hash(new_password)
